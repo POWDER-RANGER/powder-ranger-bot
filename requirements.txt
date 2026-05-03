@@ -1,0 +1,36 @@
+# ============================================================
+# POWDER-RANGER BOT — Requirements
+# CPU-only Windows (Dell Latitude 5400 target)
+# Training: Google Colab (T4 GPU)
+# Inference: ONNX Runtime CPU
+# ============================================================
+
+# --- Core Vision ---
+ultralytics==8.2.18          # YOLOv8 (training + export)
+onnxruntime==1.18.0          # CPU inference (no CUDA needed)
+opencv-python==4.9.0.80      # Frame processing
+numpy==1.26.4
+
+# --- Screen Capture ---
+mss==9.0.1                   # Low-latency Windows screen grab
+Pillow==10.3.0
+
+# --- Input Control ---
+pydirectinput==1.0.4         # DirectInput bypass (works w/ GTA V, MGS5)
+keyboard==0.13.5             # Global hotkeys (pause/stop)
+
+# --- Brain (Ollama REST) ---
+requests==2.31.0             # HTTP to local Ollama instance
+
+# --- Config & Logging ---
+PyYAML==6.0.1
+colorlog==6.8.2
+
+# --- Data / Training Pipeline ---
+roboflow==1.1.30             # Dataset download
+yt-dlp==2024.5.7             # YouTube gameplay scraping
+ffmpeg-python==0.2.0         # Frame extraction
+
+# --- Utilities ---
+tqdm==4.66.4
+python-dotenv==1.0.1

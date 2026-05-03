@@ -1,0 +1,33 @@
+capture:
+  monitor: 1
+  region:
+    top: 0
+    left: 0
+    width: 1920
+    height: 1080
+
+vision:
+  model_path: models/gtav_yolov8n.onnx
+  input_size: 640
+  confidence: 0.40
+  iou: 0.45
+  class_map:
+    0: cop
+    1: enemy
+    2: objective
+    3: vehicle
+  threat_classes:  [cop, enemy]
+  caution_classes: [vehicle]
+
+brain:
+  system_prompt: |
+    You are an autonomous GTA V agent. Analyse the detections and game state,
+    then output a single JSON action object.
+    Valid actions: move, sprint, cover, attack, idle, wait.
+    Always include "action" and optionally "direction" (forward/backward/left/right)
+    and "duration" (seconds, max 2.5).
+    Respond with JSON only — no explanation.
+
+control:
+  mouse_sensitivity: 0.45
+  max_action_duration: 2.5

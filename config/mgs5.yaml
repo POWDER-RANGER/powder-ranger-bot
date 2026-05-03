@@ -1,0 +1,33 @@
+capture:
+  monitor: 1
+  region:
+    top: 0
+    left: 0
+    width: 1920
+    height: 1080
+
+vision:
+  model_path: models/mgs5_yolov8n.onnx
+  input_size: 640
+  confidence: 0.45
+  iou: 0.45
+  class_map:
+    0: guard
+    1: guard_cone_vision
+    2: alert_indicator
+    3: objective
+    4: cover_point
+  threat_classes:  [guard, alert_indicator]
+  caution_classes: [guard_cone_vision]
+
+brain:
+  system_prompt: |
+    You are an autonomous MGS5 stealth agent. Analyse detections and game state,
+    then output a single JSON action object.
+    Valid actions: prone, crouch, cover_move, fulton, move, idle, wait.
+    Always include "action" and optionally "direction" and "duration" (max 2.5s).
+    Respond with JSON only — no explanation.
+
+control:
+  mouse_sensitivity: 0.35
+  max_action_duration: 2.5

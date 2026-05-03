@@ -1,0 +1,29 @@
+bot:
+  version: "1.0.0"
+  active_game: "gtav"   # gtav | mgs5
+
+logging:
+  level: INFO
+  log_file: logs/bot.log
+  max_bytes: 5242880
+  backup_count: 3
+
+ollama:
+  host: http://localhost:11434
+  model: dolphin-llama3:8b
+  timeout: 8.0
+  temperature: 0.2
+  max_tokens: 256
+
+loop:
+  target_fps: 8
+  frame_skip: 1
+
+display:
+  show_overlay: true
+  overlay_scale: 0.6
+
+hotkeys:
+  pause: F9
+  stop: F10
+  debug: F8
