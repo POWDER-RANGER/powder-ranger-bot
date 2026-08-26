@@ -28,7 +28,7 @@ colorlog==6.8.2
 
 # --- Data / Training Pipeline ---
 roboflow==1.1.30             # Dataset download
-yt-dlp==2026.2.21             # YouTube gameplay scraping
+yt-dlp==2026.6.9             # YouTube gameplay scraping
 ffmpeg-python==0.2.0         # Frame extraction
 
 # --- Utilities ---
