@@ -1,0 +1,33 @@
+# MGSV Autonomous Gaming Assistant - Dependencies
+
+# Core computer vision and image processing
+opencv-python==4.8.1.78
+numpy==1.24.3
+mss==9.0.1
+Pillow==10.0.0
+
+# AI/ML framework
+torch==2.0.1
+transformers==4.33.2
+stable-baselines3==2.0.0
+sentence-transformers==2.2.2
+
+# Accessibility interfaces
+speech-recognition==3.10.0
+pyttsx3==2.90
+pygame==2.5.2
+psutil==5.9.5
+
+# Optional advanced features
+pytesseract==0.3.10  # OCR for HUD reading
+ollama==0.1.7        # Local LLM server
+openai-whisper==20231117  # Local speech recognition
+
+# Development and debugging
+pytest==7.4.2
+black==23.9.1
+flake8==6.1.0
+
+# System utilities
+pywin32==306; sys_platform == "win32"
+python-xlib==0.33; sys_platform == "linux"

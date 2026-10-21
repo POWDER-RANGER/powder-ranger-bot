@@ -1,0 +1,11 @@
+# Session data stays on this machine: intent logs, recordings, profiles in use
+logs/
+STOP
+*.seal
+config/profiles/local_*.yaml
+
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/

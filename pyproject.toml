@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powder-ranger"
+version = "0.1.0"
+description = "Local, accessibility-first game companion: the player directs, the companion plays on their behalf."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pyzmq",
+    "pyyaml",
+    "pillow",
+]
+
+[project.optional-dependencies]
+windows = [
+    "vgamepad",   # virtual X360 / DS4 via ViGEmBus
+    "dxcam",      # screen capture
+    "psutil",
+]
+dev = ["pytest"]
+
+[project.scripts]
+powder-ranger = "powder_ranger.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["powder_ranger*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

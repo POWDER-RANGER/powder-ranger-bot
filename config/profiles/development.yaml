@@ -1,0 +1,16 @@
+# Development profile: for benchmarking and experiments in isolation only.
+# Use with offline games, the dryrun adapter, or recorded frames.
+# The Governor refuses this profile if online_mode is true.
+# Kill switch, neutral-on-halt, packet validation and focus checks stay on.
+
+name: development
+mode: development
+
+governor:
+  max_packets_per_sec: 240       # stress tests
+  player_override_hold_ms: 1500
+
+motor:
+  humanize: false                # raw policy output, for latency and accuracy benchmarks
+  max_presses_per_sec: 60
+  button_min_hold_ms: 16
