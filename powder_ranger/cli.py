@@ -278,6 +278,59 @@ def cmd_voice(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_calibrate(a: argparse.Namespace) -> int:
+    """record: capture the player's own pad. fit: turn a recording into a profile."""
+    from .motor import calibrate as cal
+    out_dir = Path("config") / "profiles"
+    if a.action == "record":
+        from .inputs.player import XInputSource, pick_player_slot, xinput_connected_slots
+        slot = a.slot if a.slot is not None else pick_player_slot(xinput_connected_slots())
+        path = Path(a.file or f"logs/calibration-{time.strftime('%Y%m%d-%H%M%S')}.jsonl")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Recording XInput slot {slot} for {a.seconds:.0f} s. Play normally: move the sticks, "
+              "hold them still, tap and mash buttons.")
+        n = cal.record(XInputSource(slot), path, a.seconds)
+        print(f"Recorded {n} samples to {path}")
+        return 0
+    if a.action == "reaction":
+        from .inputs.player import XInputSource, pick_player_slot, xinput_connected_slots
+        slot = a.slot if a.slot is not None else pick_player_slot(xinput_connected_slots())
+        times = cal.run_reaction_test(XInputSource(slot), trials=a.trials)
+        profile, report = cal.fit_reaction(times)
+        print(f"trials: {report['trials']}  valid: {report['valid']}  anticipations: {report['anticipations']}")
+        if "fitted" not in report:
+            print(f"  {report['kept_default']}")
+            return 1
+        for k, v in report["fitted"].items():
+            print(f"  fitted {k}: {v}")
+        name = a.name or "fitted"
+        out = out_dir / f"local_{name}.yaml"
+        if out.exists():
+            import yaml
+            data = yaml.safe_load(out.read_text()) or {}
+            data.setdefault("motor", {}).update(report["fitted"])
+            out.write_text(yaml.safe_dump(data, sort_keys=False))
+        else:
+            out.write_text(cal.profile_yaml(profile, name))
+        print(f"Profile updated: {out}")
+        return 0
+    if not a.file:
+        sys.exit("fit needs --file <recording.jsonl>")
+    profile, report = cal.fit_profile(a.file)
+    name = a.name or "fitted"
+    out = out_dir / f"local_{name}.yaml"
+    out.write_text(cal.profile_yaml(profile, name))
+    print(f"samples: {report['samples']}  duration: {report['duration_s']:.0f} s")
+    for k, v in report["fitted"].items():
+        print(f"  fitted  {k}: {v}")
+    for k in report["kept_default"]:
+        print(f"  default {k} (not enough evidence in the recording)")
+    for k in report["not_fitted"]:
+        print(f"  not fitted: {k}")
+    print(f"Profile written: {out} (git-ignored; stays on this machine)")
+    return 0
+
+
 def _netcheck(quiet: bool = False) -> int:
     targets = [("1.1.1.1", 443), ("huggingface.co", 443), ("pypi.org", 443)]
     reachable = []
@@ -363,6 +416,15 @@ def main(argv: list[str] | None = None) -> int:
     vo.add_argument("--model", default="base.en", help="faster-whisper model name or local path")
     vo.add_argument("--no-tts", action="store_true", help="print replies instead of speaking")
     vo.set_defaults(fn=cmd_voice)
+
+    ca = sub.add_parser("calibrate")
+    ca.add_argument("action", choices=["record", "fit", "reaction"])
+    ca.add_argument("--trials", type=int, default=20)
+    ca.add_argument("--file", help="recording path (record: output, fit: input)")
+    ca.add_argument("--seconds", type=float, default=180)
+    ca.add_argument("--slot", type=int)
+    ca.add_argument("--name", help="profile name for fit")
+    ca.set_defaults(fn=cmd_calibrate)
 
     sub.add_parser("netcheck").set_defaults(fn=cmd_netcheck)
 
