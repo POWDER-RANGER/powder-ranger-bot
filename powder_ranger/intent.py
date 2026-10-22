@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Iterable
@@ -24,6 +25,7 @@ BUTTONS: tuple[str, ...] = (
 )
 MENU_BUTTONS: frozenset[str] = frozenset({"START", "BACK", "GUIDE"})
 # Controls a partial player packet can claim (shared control). No claims = the whole pad.
+MAX_FRAMES = 256                    # one packet is a short chunk, not a recording
 CLAIMABLE: tuple[str, ...] = ("lx", "ly", "rx", "ry", "lt", "rt", "buttons")
 
 
@@ -54,10 +56,12 @@ class GamepadFrame:
     buttons: frozenset[str] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:
-        for name in ("lx", "ly", "rx", "ry"):
-            object.__setattr__(self, name, _clamp(float(getattr(self, name)), -1.0, 1.0))
-        for name in ("lt", "rt"):
-            object.__setattr__(self, name, _clamp(float(getattr(self, name)), 0.0, 1.0))
+        for name in ("lx", "ly", "rx", "ry", "lt", "rt"):
+            v = float(getattr(self, name))
+            if not math.isfinite(v):
+                raise ValueError(f"{name} must be finite, got {v}")
+            lo = 0.0 if name in ("lt", "rt") else -1.0
+            object.__setattr__(self, name, _clamp(v, lo, 1.0))
         unknown = set(self.buttons) - set(BUTTONS)
         if unknown:
             raise ValueError(f"unknown buttons: {sorted(unknown)}")
@@ -78,12 +82,20 @@ class GamepadFrame:
 
     @staticmethod
     def from_dict(d: dict) -> "GamepadFrame":
+        if not isinstance(d, dict):
+            raise ValueError("frame must be an object")
         return GamepadFrame(
             lx=d.get("lx", 0.0), ly=d.get("ly", 0.0),
             rx=d.get("rx", 0.0), ry=d.get("ry", 0.0),
             lt=d.get("lt", 0.0), rt=d.get("rt", 0.0),
             buttons=frozenset(d.get("buttons", ())),
         )
+
+
+def _as_list(v: object) -> list:
+    if not isinstance(v, list):
+        raise ValueError("frames must be a list")
+    return v
 
 
 @dataclass(frozen=True)
@@ -110,6 +122,17 @@ class IntentPacket:
     claims: tuple[str, ...] = ()      # player only: controls this packet owns; () = the whole pad
 
     def __post_init__(self) -> None:
+        if not isinstance(self.frames, tuple):
+            raise ValueError("frames must be a tuple")
+        if len(self.frames) > MAX_FRAMES:
+            raise ValueError(f"too many frames: {len(self.frames)} > {MAX_FRAMES}")
+        for name in ("created_at", "confidence", "frame_dt_ms"):
+            if not math.isfinite(float(getattr(self, name))):
+                raise ValueError(f"{name} must be finite")
+        if self.frame_dt_ms <= 0:
+            raise ValueError("frame_dt_ms must be positive")
+        if self.ttl_ms <= 0:
+            raise ValueError("ttl_ms must be positive")
         bad = set(self.claims) - set(CLAIMABLE)
         if bad:
             raise ValueError(f"unknown claims: {sorted(bad)}")
@@ -139,7 +162,7 @@ class IntentPacket:
             source=Source(d["source"]),
             created_at=float(d["created_at"]),
             ttl_ms=int(d["ttl_ms"]),
-            frames=tuple(GamepadFrame.from_dict(f) for f in d["frames"]),
+            frames=tuple(GamepadFrame.from_dict(f) for f in _as_list(d["frames"])),
             frame_dt_ms=float(d.get("frame_dt_ms", 1000.0 / 60.0)),
             confidence=float(d.get("confidence", 1.0)),
             delegation_id=d.get("delegation_id"),

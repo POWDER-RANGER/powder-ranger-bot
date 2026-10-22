@@ -5,7 +5,7 @@ mode: deployment             # deployment | development (see config/profiles/dev
 endpoint: tcp://127.0.0.1:5577   # Governor channel; localhost only
 tick_hz: 120                     # controller update rate
 log_dir: logs
-stop_file: STOP                  # create this file to trip the kill switch
+stop_file: ~/.powder_ranger/STOP # create this file to trip the kill switch (absolute: independent of the working directory)
 output: x360                     # x360 | ds4 | dryrun
 invert_y: false                  # set true if padtest shows up/down swapped
 

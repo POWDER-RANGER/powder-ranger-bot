@@ -19,7 +19,7 @@ class Settings:
     endpoint: str = "tcp://127.0.0.1:5577"
     tick_hz: float = 120.0
     log_dir: str = "logs"
-    stop_file: str = "STOP"
+    stop_file: str = str(Path.home() / ".powder_ranger" / "STOP")
     output: str = "x360"
     invert_y: bool = False
     governor: GovernorConfig = field(default_factory=GovernorConfig)
@@ -35,6 +35,7 @@ DEPLOYMENT_BOUNDS = {
     "motor.max_presses_per_sec": ("<=", 12.0),
     "motor.button_min_hold_ms": (">=", 30.0),
     "motor.humanize": ("==", True),
+    "motor.episode_gap_ms": ("<=", 1000.0),
     "governor.max_packets_per_sec": ("<=", 60.0),
     "governor.require_focus": ("==", True),
 }
@@ -82,12 +83,14 @@ def load_settings(config_path: str | Path | None = None, profile_path: str | Pat
         raise ValueError(f"unknown governor settings: {sorted(unknown)}")
     if "blocked_scopes_online" in gov_raw:
         gov_raw["blocked_scopes_online"] = tuple(gov_raw["blocked_scopes_online"])
+    if gov_raw.get("allowed_scopes") is not None:
+        gov_raw["allowed_scopes"] = tuple(gov_raw["allowed_scopes"])
 
     s = Settings(
         endpoint=raw.get("endpoint", Settings.endpoint),
         tick_hz=float(raw.get("tick_hz", Settings.tick_hz)),
         log_dir=raw.get("log_dir", Settings.log_dir),
-        stop_file=raw.get("stop_file", Settings.stop_file),
+        stop_file=str(Path(raw.get("stop_file", Settings.stop_file)).expanduser().resolve()),
         output=raw.get("output", Settings.output),
         invert_y=bool(raw.get("invert_y", False)),
         governor=GovernorConfig(**gov_raw),

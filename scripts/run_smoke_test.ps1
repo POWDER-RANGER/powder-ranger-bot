@@ -21,7 +21,8 @@ $Repo = Split-Path -Parent $PSScriptRoot
 Set-Location $Repo
 $py = ".venv\Scripts\python.exe"
 
-if (Test-Path STOP) { throw "STOP file present. Delete it to start." }
+$stopFile = Join-Path $env:USERPROFILE ".powder_ranger\STOP"
+if (Test-Path $stopFile) { throw "STOP file present at $stopFile. Delete it to start." }
 if (-not (Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($Process)) -ErrorAction SilentlyContinue)) {
     throw "$Process is not running. Start the game first (check the exact name in Task Manager)."
 }

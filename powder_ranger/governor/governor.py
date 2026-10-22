@@ -44,11 +44,10 @@ class Governor:
         self.focus = focus
         self.clock = clock
         self._out_lock = threading.Lock()
-        self._last_allowed: float | None = None
         self._claims: dict[str, tuple[object, float]] = {}   # control -> (player value, time)
         self._watchdog_neutral = False
         self.running = True
-        self.stats = {"allowed": 0, "denied": 0, "bad_signature": 0}
+        self.stats = {"allowed": 0, "denied": 0, "bad_signature": 0, "malformed": 0}
         self.seal_key = seal_key
         self.kill.on_trip(self._on_trip)
         self.log.append("session_start", adapter=adapter.name, config=vars(cfg),
@@ -56,12 +55,13 @@ class Governor:
 
     # ------------------------------------------------------------------
     def _on_trip(self, reason: str) -> None:
-        """May run on the hotkey thread: neutral output first, then bookkeeping."""
+        """May run on the hotkey thread: latch the halt first so no packet can be accepted
+        while the neutral frame is being written, then zero the output, then log."""
+        self.policy.halt(reason)
+        self.policy.revoke()
         with self._out_lock:
             self._claims.clear()
             self.adapter.apply(self.motor.hard_neutral())
-        self.policy.halt(reason)
-        self.policy.revoke()
         self.log.append("kill_switch", reason=reason, delegations_revoked=True)
 
     def handle_raw(self, key: bytes, raw: bytes) -> None:
@@ -71,7 +71,11 @@ class Governor:
             self.stats["bad_signature"] += 1
             self.log.append("rejected_message", reason=str(exc))
             return
-        self.handle(msg_type, body)
+        try:
+            self.handle(msg_type, body)
+        except (KeyError, ValueError, TypeError, AttributeError, OverflowError) as exc:
+            self.stats["malformed"] += 1
+            self.log.append("rejected_message", reason=f"malformed {msg_type}: {type(exc).__name__}: {exc}")
 
     def handle(self, msg_type: str, body: dict) -> None:
         now = self.clock()
@@ -94,11 +98,7 @@ class Governor:
                 self._watchdog_neutral = False
                 if d.packet.source.value == "player":
                     self._claims.clear()                 # full takeover supersedes partial claims
-                start = self.motor.schedule(d.packet.frames, d.packet.frame_dt_ms, d.packet.source, now)
-                # The watchdog counts from the END of the scheduled playback: a long action chunk
-                # must not be cut off just because the policy is still thinking about the next one.
-                playback_end = start + (len(d.packet.frames) - 1) * d.packet.frame_dt_ms / 1000.0
-                self._last_allowed = max(now, playback_end)
+                self.motor.schedule(d.packet.frames, d.packet.frame_dt_ms, d.packet.source, now)
             else:
                 self.stats["denied"] += 1
         elif msg_type == "grant":
@@ -142,11 +142,15 @@ class Governor:
                 frame = GamepadFrame.neutral()
                 self.adapter.apply(frame)
             return frame
-        if (self._last_allowed is not None and not self._watchdog_neutral
-                and (now - self._last_allowed) * 1000.0 > self.cfg.watchdog_ms):
+        # The watchdog watches what was actually played, not what arrived: a long chunk keeps
+        # it quiet while it plays out, and packets that produce no frames cannot keep a held
+        # value alive.
+        last = self.motor.last_played
+        if (last is not None and not self._watchdog_neutral and not self.motor.pending()
+                and (now - last) * 1000.0 > self.cfg.watchdog_ms):
             self.motor.clear()
             self._watchdog_neutral = True
-            self.log.append("watchdog", note=f"no approved intent for {self.cfg.watchdog_ms} ms; easing to neutral")
+            self.log.append("watchdog", note=f"no output played for {self.cfg.watchdog_ms} ms; easing to neutral")
         with self._out_lock:
             frame = self._merge_claims(self.motor.step(now), now)
             self.adapter.apply(frame)

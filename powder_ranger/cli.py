@@ -57,6 +57,7 @@ def cmd_governor(a: argparse.Namespace) -> int:
         from .packs import load_pack
         pk = load_pack(a.pack)
         pack_info = pk.session_info()
+        s.governor.allowed_scopes = tuple(pk.allowed_scopes)      # grants outside the pack are refused
         if pk.online:
             s.governor.online_mode = True
     output = a.output or s.output
@@ -465,6 +466,7 @@ def cmd_verify_log(a: argparse.Namespace) -> int:
 
 def cmd_stop(a: argparse.Namespace) -> int:
     s = load_settings(a.config, a.profile)
+    Path(s.stop_file).parent.mkdir(parents=True, exist_ok=True)
     Path(s.stop_file).touch()
     print(f"Created {s.stop_file}: the Governor halts within one tick. Delete it before the next session.")
     return 0

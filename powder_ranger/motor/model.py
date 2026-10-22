@@ -31,6 +31,7 @@ class MotorProfile:
     reaction_sigma: float = 0.25          # log-normal shape
     reaction_min_ms: float = 120.0
     reaction_max_ms: float = 400.0
+    episode_gap_ms: float = 500.0         # idle time after which the next command is a new "onset" (gets a reaction delay)
     move_a_ms: float = 40.0               # Fitts: T = a + b * log2(1 + distance / width)
     move_b_ms: float = 70.0
     move_width: float = 0.15
@@ -53,6 +54,9 @@ class MotorProfile:
                 raise ValueError(f"unknown motor profile field: {k}")
             setattr(p, k, bool(v) if k == "humanize" else float(v))
         return p
+
+
+_CLEAR = GamepadFrame.neutral()           # sentinel queued by clear(); does not count as played output
 
 
 def min_jerk(tau: float) -> float:
@@ -90,6 +94,8 @@ class MotorModel:
                            for a in ("lx", "ly", "rx", "ry")}
         self._drift = {a: 0.0 for a in ("lx", "ly", "rx", "ry")}
         self._last_t: float | None = None
+        self._last_played: float | None = None        # when a scheduled frame last reached the output
+        self._onset_due = 0.0                         # earliest time the current episode may produce output
 
     # ------------------------------------------------------------------
     def sample_reaction_s(self) -> float:
@@ -102,12 +108,39 @@ class MotorModel:
             return 0.0
         return (self.p.move_a_ms + self.p.move_b_ms * math.log2(1 + distance / self.p.move_width)) / 1000.0
 
+    def pending(self) -> bool:
+        """True while scheduled frames have yet to be played."""
+        return bool(self._queue)
+
+    @property
+    def last_played(self) -> float | None:
+        """Time the most recent scheduled frame was played, or None if nothing is in flight."""
+        return self._last_played
+
     def schedule(self, frames: tuple[GamepadFrame, ...], frame_dt_ms: float,
                  source: Source, now: float) -> float:
-        """Replace pending output with a new sequence. Returns the start time."""
+        """Merge a new chunk into the output stream. Returns the start time.
+
+        Companion output gets one reaction delay per *episode* (the first command after
+        an idle period), not one per packet: a continuous stream of chunks would otherwise
+        keep erasing itself. Inside an episode a new chunk starts immediately and supersedes
+        whatever is still queued from older chunks. Player output replaces everything at once.
+        """
         humanize = source is not Source.PLAYER and self.p.humanize
-        start = now + (self.sample_reaction_s() if humanize else 0.0)
-        self._queue.clear()
+        if not frames:
+            return now
+        if not humanize:
+            self._queue.clear()
+            start = now
+        else:
+            idle = (self._last_played is None
+                    or (now - self._last_played) * 1000.0 > self.p.episode_gap_ms)
+            if idle and not self._queue:
+                self._onset_due = now + self.sample_reaction_s()
+            start = max(now, self._onset_due)
+            kept = [q for q in self._queue if q[0] < start]       # older frames that are already due
+            self._queue.clear()
+            self._queue.extend(kept)
         for i, f in enumerate(frames):
             self._queue.append((start + i * frame_dt_ms / 1000.0, f, humanize))
         return start
@@ -115,11 +148,13 @@ class MotorModel:
     def clear(self) -> None:
         """Drop pending output and head back to neutral (smoothly)."""
         self._queue.clear()
-        self._queue.append((0.0, GamepadFrame.neutral(), True))
+        self._queue.append((0.0, _CLEAR, True))
+        self._last_played = None
 
     def hard_neutral(self) -> GamepadFrame:
         """Immediate neutral, no smoothing. Used by the kill switch."""
         self._queue.clear()
+        self._last_played = None
         self._target = GamepadFrame.neutral()
         for a in _AXES:
             self._pos[a] = 0.0
@@ -170,6 +205,8 @@ class MotorModel:
         while self._queue and self._queue[0][0] <= now:
             _, f, hum = self._queue.popleft()
             self._retarget(f, hum, now)
+            if f is not _CLEAR:
+                self._last_played = now
 
         vals = {a: self._traj[a].at(now) for a in _AXES}
 

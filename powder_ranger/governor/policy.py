@@ -32,6 +32,7 @@ class GovernorConfig:
     blocked_scopes_online: tuple[str, ...] = ("full_autopilot",)
     require_focus: bool = True
     watchdog_ms: int = 500                     # no allowed packet this long -> neutral output
+    allowed_scopes: tuple[str, ...] | None = None   # the game pack's scopes; None = no pack limit
     claim_ttl_ms: int = 250                    # a partial player claim lasts this long without refresh
 
 
@@ -76,6 +77,8 @@ class GovernorPolicy:
         self.halted, self.halt_reason = False, ""
 
     def grant(self, d: Delegation) -> list[str]:
+        if self.cfg.allowed_scopes is not None and d.scope not in self.cfg.allowed_scopes:
+            return [f"scope '{d.scope}' not allowed by the game pack (allowed: {', '.join(self.cfg.allowed_scopes)})"]
         if self.cfg.online_mode and d.scope in self.cfg.blocked_scopes_online:
             return [f"scope '{d.scope}' not allowed in online mode"]
         self.delegations[d.id] = d
