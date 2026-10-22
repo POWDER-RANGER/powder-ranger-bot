@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..intent import Delegation, IntentPacket, MENU_BUTTONS, Source
+from ..intent import MENU_BUTTONS, Delegation, IntentPacket, Source
 
 
 @dataclass

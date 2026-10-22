@@ -39,6 +39,7 @@ def find_window_rect(process_name: str) -> tuple[int, int, int, int]:
         raise RuntimeError("window capture is Windows-only")
     make_dpi_aware()
     import ctypes.wintypes as wt
+
     import psutil
 
     pids = {p.pid for p in psutil.process_iter(["name"])

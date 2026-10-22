@@ -7,8 +7,10 @@ plays on their behalf, through a virtual controller, from the screen alone.
 controller output traces to a player intent or to a delegation the player
 granted, and the player can take control back at any instant.
 
-Status: **Stage 1 (pipeline smoke test) - code complete, not yet run on hardware.**
-See [What has and has not been verified](#what-has-and-has-not-been-verified).
+Status: **Stage 1 (pipeline smoke test): code complete and unit-tested; the end-to-end run on hardware has not happened yet.**
+See [What has and has not been verified](#what-has-and-has-not-been-verified),
+[ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md) and the
+[October 2026 code review](docs/REVIEW-2026-10.md).
 
 ## How it fits together
 
@@ -57,7 +59,7 @@ See [What has and has not been verified](#what-has-and-has-not-been-verified).
 5. Online mode: no full-autopilot grants; the player must have shown presence recently.
 6. Companion output only while the target game window is in front.
 7. Confidence floor, per-source rate limit, menu buttons stripped from companion output.
-8. Watchdog: no approved intent for 500 ms eases the pad to neutral.
+8. Watchdog: no output played for 500 ms (and nothing queued) eases the pad to neutral.
 9. Shutdown and errors always leave the pad neutral; the log is sealed on close.
 10. No game memory access, no code injection: the game sees only a controller.
 
@@ -189,12 +191,12 @@ Verified on the MSI (2026-10-21, Windows 11 Insider 26220, Python 3.11):
 - SuperTuxKart 1.5 installed as `supertuxkart.exe`; a virtual DS4 pad creates
 
 Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
-108 tests passing, including a headless end-to-end run (fake NitroGen and fake
+132 tests passing, including a headless end-to-end run (fake NitroGen and fake
 capture over real ZMQ sockets to a Governor with the dry-run adapter, then a
 halt and a sealed-log check), and a `governor` CLI run with `verify-log`
 reporting chain OK and seal OK.
 
-Not yet run: anything on Windows. Unverified until the MSI runs them:
+The review fixes (docs/REVIEW-2026-10.md) have not yet run on the MSI. Unverified until the MSI runs them:
 - DS4 axis direction (XInput cannot read a DS4; check in joy.cpl)
 - Reading a physical pad through XInput (no physical pad was connected)
 - dxcam capture of the game window
@@ -205,8 +207,8 @@ Not yet run: anything on Windows. Unverified until the MSI runs them:
 
 NitroGen runs in its own venv and process, reached over a local socket. Its
 code and weights are under NVIDIA's noncommercial license (research use
-only). Powder Ranger's own code imports nothing from NitroGen. The license for
-Powder Ranger's own code is an open decision (see the design doc).
+only). Powder Ranger's own code imports nothing from NitroGen. Powder Ranger's own code is MIT-licensed (see `LICENSE`); NitroGen's weights
+are not, so check NVIDIA's terms before any use beyond research.
 
 NitroGen's server binds all network interfaces and exchanges pickle, which
 can execute code if a stranger reaches it. `lockdown_offline.ps1` blocks

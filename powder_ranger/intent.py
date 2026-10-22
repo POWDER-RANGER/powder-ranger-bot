@@ -11,9 +11,9 @@ import hashlib
 import hmac
 import json
 import math
-from dataclasses import dataclass, field, asdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Iterable
 
 # Unified button names. These follow NitroGen's naming so policy output maps 1:1.
 BUTTONS: tuple[str, ...] = (
@@ -68,10 +68,10 @@ class GamepadFrame:
         object.__setattr__(self, "buttons", frozenset(self.buttons))
 
     @staticmethod
-    def neutral() -> "GamepadFrame":
+    def neutral() -> GamepadFrame:
         return GamepadFrame()
 
-    def without(self, buttons: Iterable[str]) -> "GamepadFrame":
+    def without(self, buttons: Iterable[str]) -> GamepadFrame:
         return GamepadFrame(self.lx, self.ly, self.rx, self.ry, self.lt, self.rt,
                             self.buttons - frozenset(buttons))
 
@@ -81,7 +81,7 @@ class GamepadFrame:
         return d
 
     @staticmethod
-    def from_dict(d: dict) -> "GamepadFrame":
+    def from_dict(d: dict) -> GamepadFrame:
         if not isinstance(d, dict):
             raise ValueError("frame must be an object")
         return GamepadFrame(
@@ -156,7 +156,7 @@ class IntentPacket:
         }
 
     @staticmethod
-    def from_dict(d: dict) -> "IntentPacket":
+    def from_dict(d: dict) -> IntentPacket:
         return IntentPacket(
             seq=int(d["seq"]),
             source=Source(d["source"]),
@@ -194,7 +194,7 @@ class Delegation:
         return asdict(self)
 
     @staticmethod
-    def from_dict(d: dict) -> "Delegation":
+    def from_dict(d: dict) -> Delegation:
         return Delegation(id=d["id"], scope=d["scope"], granted_at=float(d["granted_at"]),
                           expires_at=d.get("expires_at"), note=d.get("note", ""))
 

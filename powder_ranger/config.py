@@ -41,7 +41,7 @@ DEPLOYMENT_BOUNDS = {
 }
 
 
-def validate_settings(s: "Settings", output: str | None = None) -> list[str]:
+def validate_settings(s: Settings, output: str | None = None) -> list[str]:
     """Problems that must block a session from starting. Empty list = OK."""
     problems: list[str] = []
     if s.mode not in ("deployment", "development"):

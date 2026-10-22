@@ -22,7 +22,8 @@ from __future__ import annotations
 import ctypes
 import sys
 import time
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import Protocol
 
 from ..intent import GamepadFrame
 from ..motor.filters import OneEuroFilter

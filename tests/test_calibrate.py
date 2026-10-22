@@ -72,6 +72,7 @@ def test_profile_yaml_loads(tmp_path):
 
 def test_reaction_fit_recovers_lognormal_and_drops_anticipations():
     import math
+
     from powder_ranger.motor.calibrate import fit_reaction
     rng = random.Random(3)
     times = [math.exp(rng.gauss(math.log(260), 0.2)) for _ in range(40)] + [0.0, 0.0, 40.0]

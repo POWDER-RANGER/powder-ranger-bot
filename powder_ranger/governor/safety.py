@@ -13,8 +13,8 @@ from __future__ import annotations
 import ctypes
 import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 IS_WINDOWS = sys.platform == "win32"
 

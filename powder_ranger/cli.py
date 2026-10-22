@@ -268,12 +268,14 @@ def cmd_padtest(a: argparse.Namespace) -> int:
 def cmd_player(a: argparse.Namespace) -> int:
     """Player input -> Governor as PLAYER packets (always outrank the companion)."""
     import yaml
+
     from .governor.client import GovernorClient
     from .inputs.player import KeyboardSource, PlayerInputLoop, XInputSource
 
     s = load_settings(a.config, a.profile)
     if a.source == "gaze":
         import json as _json
+
         from .inputs.gaze import GazeCalibration, GazeSource, GazeStick, mediapipe_features
         if not a.gaze_cal or not Path(a.gaze_cal).exists():
             sys.exit("gaze needs --gaze-cal (run `python -m powder_ranger gaze-calibrate` first)")
@@ -390,6 +392,7 @@ def cmd_calibrate(a: argparse.Namespace) -> int:
 
 def cmd_report(a: argparse.Namespace) -> int:
     import json as _json
+
     from .report import build_report, format_report
     path = Path(a.path) if a.path else max(Path(load_settings(a.config, a.profile).log_dir).glob("session-*.jsonl"),
                                            key=lambda p: p.stat().st_mtime, default=None)
@@ -406,6 +409,7 @@ def cmd_report(a: argparse.Namespace) -> int:
 
 def cmd_gaze_calibrate(a: argparse.Namespace) -> int:
     import json as _json
+
     from .inputs.gaze import mediapipe_features, run_calibration
     if not Path(a.face_model).exists():
         sys.exit(f"face model not found: {a.face_model} (download face_landmarker.task in prep mode)")

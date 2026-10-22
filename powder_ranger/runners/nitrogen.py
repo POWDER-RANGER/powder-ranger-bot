@@ -90,7 +90,7 @@ class NitroGenServer:
         except self._zmq.Again:
             self.sock.close()
             self._connect()                          # a REQ socket is stuck after a timeout
-            raise TimeoutError("NitroGen server did not answer in time")
+            raise TimeoutError("NitroGen server did not answer in time") from None
         if resp.get("status") != "ok":
             raise RuntimeError(resp.get("message", "server error"))
         return resp

@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import FakeClock
+
 from powder_ranger.governor.governor import Governor
 from powder_ranger.governor.intent_log import IntentLog
 from powder_ranger.governor.policy import GovernorConfig

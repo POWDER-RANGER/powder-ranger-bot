@@ -10,8 +10,8 @@ F7     the STOP file must not depend on the working directory
 import json
 
 import pytest
-
 from conftest import FakeClock
+
 from powder_ranger.config import load_settings
 from powder_ranger.governor.governor import Governor
 from powder_ranger.governor.intent_log import IntentLog

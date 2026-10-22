@@ -3,9 +3,9 @@ import threading
 import time
 
 import numpy as np
-
 from conftest import FakeClock
-from powder_ranger.config import load_settings, validate_settings, ROOT
+
+from powder_ranger.config import ROOT, load_settings, validate_settings
 from powder_ranger.governor.client import GovernorClient
 from powder_ranger.governor.governor import Governor
 from powder_ranger.governor.intent_log import IntentLog, verify_log, verify_seal

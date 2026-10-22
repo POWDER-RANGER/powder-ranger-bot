@@ -16,8 +16,8 @@ Everything except the webcam loop is pure math and unit-tested.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
@@ -84,7 +84,7 @@ class GazeCalibration:
         return {"coef": self.coef.tolist() if self.coef is not None else None, "rms_px": self.rms_px}
 
     @staticmethod
-    def from_dict(d: dict) -> "GazeCalibration":
+    def from_dict(d: dict) -> GazeCalibration:
         c = GazeCalibration()
         c.coef = np.asarray(d["coef"]) if d.get("coef") is not None else None
         c.rms_px = d.get("rms_px")

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from ..intent import BadSignature, Delegation, GamepadFrame, IntentPacket, verify_message
 from ..motor.model import MotorModel

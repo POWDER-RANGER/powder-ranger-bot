@@ -47,7 +47,7 @@ class MotorProfile:
     humanize: bool = True                 # development mode may switch this off for benchmarking
 
     @staticmethod
-    def from_dict(d: dict | None) -> "MotorProfile":
+    def from_dict(d: dict | None) -> MotorProfile:
         p = MotorProfile()
         for k, v in (d or {}).items():
             if not hasattr(p, k):

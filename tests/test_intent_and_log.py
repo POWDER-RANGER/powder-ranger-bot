@@ -3,8 +3,7 @@ import json
 import pytest
 
 from powder_ranger.governor.intent_log import IntentLog, verify_log, verify_seal
-from powder_ranger.intent import (BadSignature, GamepadFrame, IntentPacket, Source,
-                                  sign_message, verify_message)
+from powder_ranger.intent import BadSignature, GamepadFrame, IntentPacket, Source, sign_message, verify_message
 
 KEY = b"k" * 32
 

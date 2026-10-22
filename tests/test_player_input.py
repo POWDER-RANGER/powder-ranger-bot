@@ -1,12 +1,18 @@
 import pytest
-
 from conftest import FakeClock
+
 from powder_ranger.governor.governor import Governor
 from powder_ranger.governor.intent_log import IntentLog
 from powder_ranger.governor.policy import GovernorConfig
 from powder_ranger.governor.safety import KillSwitch
-from powder_ranger.inputs.player import (FakeSource, KeyboardSource, PlayerInputLoop, VK_NAMES,
-                                         pick_player_slot, xinput_state_to_frame)
+from powder_ranger.inputs.player import (
+    VK_NAMES,
+    FakeSource,
+    KeyboardSource,
+    PlayerInputLoop,
+    pick_player_slot,
+    xinput_state_to_frame,
+)
 from powder_ranger.intent import Delegation, GamepadFrame, IntentPacket, Source
 from powder_ranger.motor.model import MotorModel, MotorProfile
 from powder_ranger.output.adapters import DryRunAdapter
@@ -64,7 +70,7 @@ def test_steady_filter_smooths_player_tremor():
     import math
     c = FakeClock(0.0)
     frames = [GamepadFrame(lx=0.5 + 0.1 * math.sin(2 * math.pi * 6 * i / 120)) for i in range(240)]
-    raw_loop = PlayerInputLoop(FakeSource(list(frames)), lambda f: None, clock=c)
+    PlayerInputLoop(FakeSource(list(frames)), lambda f: None, clock=c)
     sent = []
     steady = PlayerInputLoop(FakeSource(list(frames)), sent.append, steady=True, clock=c)
     for _ in frames:

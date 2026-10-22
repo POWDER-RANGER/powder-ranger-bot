@@ -1,8 +1,17 @@
 import numpy as np
-
 from conftest import FakeClock
-from powder_ranger.inputs.gaze import (BlinkDetector, DwellSelector, GazeCalibration, GazeSource, GazeStick,
-                                       Zone, calibration_targets, eye_aspect_ratio, eye_features)
+
+from powder_ranger.inputs.gaze import (
+    BlinkDetector,
+    DwellSelector,
+    GazeCalibration,
+    GazeSource,
+    GazeStick,
+    Zone,
+    calibration_targets,
+    eye_aspect_ratio,
+    eye_features,
+)
 
 W, H = 1920, 1080
 

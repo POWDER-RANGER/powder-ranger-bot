@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether - a local, accessibility-first game companion</title>
+<meta name="description" content="The player directs; the companion plays through a virtual controller, from the screen alone, fully local.">
+<style>
+:root{--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3b2;--line:#262b35;--acc:#7cc4ff}
+@media (prefers-color-scheme:light){:root{--bg:#fafafa;--fg:#14171c;--mut:#566070;--line:#dfe3ea;--acc:#0a6bc2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:48px 20px 64px}
+h1{font-size:2.2rem;margin:0 0 8px}
+h2{font-size:1.15rem;margin:40px 0 8px;border-top:1px solid var(--line);padding-top:24px}
+p,li{color:var(--fg)}
+.lead{color:var(--mut);font-size:1.1rem}
+a{color:var(--acc)}
+code{background:var(--line);padding:1px 6px;border-radius:4px}
+pre{background:var(--line);padding:14px;border-radius:8px;overflow:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Aether</h1>
+<p class="lead">A local, accessibility-first game companion. The player directs; the companion plays through a virtual controller, from the screen alone.</p>
+
+<h2>Principle</h2>
+<p>The player is the legend; the companion is the body double. Every controller output traces to a player intent or a delegation the player granted, and the player can take control back at any instant.</p>
+
+<h2>How it works</h2>
+<ul>
+<li>One process, the Governor, owns the virtual controller. Everything else sends signed intent packets to it.</li>
+<li>Output is held to human limits: reaction time, smooth travel, tremor, button timing, press-rate caps.</li>
+<li>No game memory access, no code injection. The game sees only a controller.</li>
+<li>Play mode runs offline. Every decision is written to a hash-chained, sealed log.</li>
+<li>The player's channels (pad, keyboard or switches, voice, gaze) merge through shared control.</li>
+</ul>
+
+<h2>Status</h2>
+<p>Stage 1 is code complete and unit-tested. The first end-to-end hardware run has not happened yet; the repository states what has and has not been verified.</p>
+
+<h2>Read more</h2>
+<ul>
+<li><a href="https://github.com/POWDER-RANGER/aether">Repository</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/ARCHITECTURE.md">Architecture</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/SECURITY.md">Security model</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/docs/REVIEW-2026-10.md">Code review, October 2026</a></li>
+</ul>
+</main>
+</body>
+</html>
