@@ -3,50 +3,250 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aether - a local, accessibility-first game companion</title>
-<meta name="description" content="The player directs; the companion plays through a virtual controller, from the screen alone, fully local.">
+<title>Aether | A local, accessibility-first game companion</title>
+<meta name="description" content="The player directs; the companion plays through a virtual controller, from the screen alone. Local only, human limits, signed and sealed.">
+<meta name="theme-color" content="#0b0c0d">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Aether | A local, accessibility-first game companion">
+<meta property="og:description" content="The player is the legend. The companion is the body double.">
+<meta property="og:image" content="https://powder-ranger.github.io/powder-ranger-bot/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b0c0d'/%3E%3Cg fill='none' stroke='%23f2c230' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='20'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3Cpath d='M32 6v12M32 46v12M6 32h12M46 32h12'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-:root{--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3b2;--line:#262b35;--acc:#7cc4ff}
-@media (prefers-color-scheme:light){:root{--bg:#fafafa;--fg:#14171c;--mut:#566070;--line:#dfe3ea;--acc:#0a6bc2}}
+:root{
+  --bg:#0b0c0d; --panel:#121416; --line:#2a2d31; --txt:#d9d6cc; --mut:#8f908a;
+  --acc:#f2c230; --acc-ink:#0b0c0d; --ok:#7fb48a; --warn:#d9a441; --bad:#d1573f;
+  --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f4f2ea; --panel:#ffffff; --line:#d4d0c3; --txt:#1a1b1d; --mut:#5d5e59; --acc:#8a6200; --acc-ink:#ffffff; --ok:#2f7a45; --warn:#8a6200; --bad:#a8321e}
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:760px;margin:0 auto;padding:48px 20px 64px}
-h1{font-size:2.2rem;margin:0 0 8px}
-h2{font-size:1.15rem;margin:40px 0 8px;border-top:1px solid var(--line);padding-top:24px}
-p,li{color:var(--fg)}
-.lead{color:var(--mut);font-size:1.1rem}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.012) 3px 4px)}
 a{color:var(--acc)}
-code{background:var(--line);padding:1px 6px;border-radius:4px}
-pre{background:var(--line);padding:14px;border-radius:8px;overflow:auto}
+a:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--acc);color:var(--acc-ink);padding:8px 14px;z-index:20}
+.skip:focus{left:8px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.mono{font-family:var(--mono)}
+.kick{font:600 12px/1.7 var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--mut)}
+.kick b{display:inline-block;width:9px;height:9px;background:var(--acc);margin-right:12px;vertical-align:-1px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+.mark{font:700 15px/1 var(--sans);letter-spacing:.34em;color:var(--txt);text-decoration:none}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;overflow-x:auto}
+nav li a{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mut);text-decoration:none;white-space:nowrap}
+nav li a:hover{color:var(--acc)}
+
+/* hero */
+.hero{position:relative;padding:96px 0 88px;border-bottom:1px solid var(--line);overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:48px 48px;opacity:.35;mask-image:radial-gradient(ellipse at 70% 40%,#000 0,transparent 70%)}
+.hero h1{font:700 clamp(52px,11vw,120px)/.95 var(--sans);letter-spacing:.14em;margin:28px 0 8px -4px}
+.hero .rule{width:120px;height:4px;background:var(--acc);margin:22px 0 26px}
+.hero p.lead{font-size:clamp(18px,2.4vw,26px);max-width:30ch;margin:0 0 34px}
+.chip{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;border:1px solid var(--acc);color:var(--acc);padding:9px 12px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
+.btn{font:700 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;text-decoration:none;padding:15px 20px;border:1px solid var(--acc);color:var(--acc)}
+.btn.primary{background:var(--acc);color:var(--acc-ink)}
+.btn:hover{filter:brightness(1.12)}
+.reticle{position:absolute;right:max(24px,calc(50% - 500px));top:50%;width:min(30vw,330px);aspect-ratio:1;transform:translateY(-50%);z-index:0;opacity:.9}
+.reticle svg{width:100%;height:100%}
+@media (prefers-reduced-motion:no-preference){.reticle .spin{transform-origin:50% 50%;animation:spin 90s linear infinite}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:760px){.reticle{opacity:.18;width:70vw}}
+
+/* sections */
+section{padding:84px 0;border-bottom:1px solid var(--line)}
+section h2{font:700 clamp(26px,4vw,38px)/1.15 var(--sans);letter-spacing:.04em;margin:18px 0 28px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);padding:22px 22px 24px;position:relative}
+.card::before{content:"";position:absolute;left:-1px;top:-1px;width:18px;height:18px;border-left:2px solid var(--acc);border-top:2px solid var(--acc)}
+.card h3{font:700 13px/1.3 var(--sans);letter-spacing:.2em;text-transform:uppercase;margin:0 0 10px}
+.card p{margin:0;color:var(--mut)}
+.quote{font:600 clamp(22px,3.4vw,34px)/1.3 var(--sans);max-width:24ch;margin:0 0 36px}
+.quote em{font-style:normal;color:var(--acc)}
+figure{margin:0}
+figure img{width:100%;height:auto;display:block;border:1px solid var(--line)}
+figcaption{margin-top:14px;color:var(--mut);max-width:70ch}
+ol.rules{counter-reset:r;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+ol.rules li{counter-increment:r;background:var(--panel);border:1px solid var(--line);padding:16px 18px 16px 62px;position:relative;min-height:74px}
+ol.rules li::before{content:counter(r,decimal-leading-zero);position:absolute;left:18px;top:15px;font:700 22px/1 var(--mono);color:var(--acc)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line)}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+td:first-child{font-weight:600;width:38%}
+.pill{display:inline-block;font:700 10.5px/1 var(--mono);letter-spacing:.16em;padding:6px 8px;border:1px solid currentColor;white-space:nowrap}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.scroll{overflow-x:auto}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;border:1px solid var(--line)}
+.stage{padding:22px;background:var(--panel);border-right:1px solid var(--line);position:relative}
+.stage:last-child{border-right:0}
+.stage.now{outline:2px solid var(--acc);outline-offset:-2px}
+.stage .n{font:700 12px/1 var(--mono);letter-spacing:.2em;color:var(--acc)}
+.stage h3{font:700 17px/1.3 var(--sans);margin:12px 0 8px}
+.stage p{margin:0;color:var(--mut);font-size:15px}
+.stage .gate{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line);font:500 12px/1.5 var(--mono);color:var(--mut)}
+.note{color:var(--mut);font-size:14px;margin-top:16px;max-width:70ch}
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.docs a{display:block;background:var(--panel);border:1px solid var(--line);padding:18px 20px;text-decoration:none;color:var(--txt)}
+.docs a:hover{border-color:var(--acc)}
+.docs a b{display:block;font:700 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.docs a span{color:var(--mut);font-size:15px}
+footer{padding:48px 0 72px;color:var(--mut);font-size:14px}
+footer p{max-width:72ch;margin:0 0 10px}
 </style>
 </head>
 <body>
-<main>
-<h1>Aether</h1>
-<p class="lead">A local, accessibility-first game companion. The player directs; the companion plays through a virtual controller, from the screen alone.</p>
+<a class="skip" href="#main">Skip to content</a>
+<nav aria-label="Primary">
+  <div class="wrap">
+    <a class="mark" href="#top">AETHER</a>
+    <ul>
+      <li><a href="#briefing">Briefing</a></li>
+      <li><a href="#picture">Picture</a></li>
+      <li><a href="#rules">Rules</a></li>
+      <li><a href="#status">Status</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#manual">Manual</a></li>
+      <li><a href="https://github.com/POWDER-RANGER/powder-ranger-bot">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
 
-<h2>Principle</h2>
-<p>The player is the legend; the companion is the body double. Every controller output traces to a player intent or a delegation the player granted, and the player can take control back at any instant.</p>
+<header class="hero" id="top">
+  <div class="reticle" aria-hidden="true">
+    <svg viewBox="0 0 400 400" fill="none" stroke="var(--acc)" stroke-width="1.5">
+      <g class="spin"><circle cx="200" cy="200" r="190" stroke-dasharray="2 10"/></g>
+      <circle cx="200" cy="200" r="150"/>
+      <circle cx="200" cy="200" r="92" opacity=".6"/>
+      <circle cx="200" cy="200" r="30"/>
+      <path d="M200 20v60M200 320v60M20 200h60M320 200h60"/>
+      <path d="M150 200h100M200 150v100" opacity=".6"/>
+    </svg>
+  </div>
+  <div class="wrap">
+    <div class="kick"><b></b>Powder Ranger // Field companion</div>
+    <h1>AETHER</h1>
+    <div class="rule"></div>
+    <p class="lead">A local, accessibility-first game companion. The player directs. The companion plays.</p>
+    <span class="chip">Stage 1 · smoke test pending</span>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/POWDER-RANGER/powder-ranger-bot">View the repository</a>
+      <a class="btn" href="#briefing">Read the briefing</a>
+    </div>
+  </div>
+</header>
 
-<h2>How it works</h2>
-<ul>
-<li>One process, the Governor, owns the virtual controller. Everything else sends signed intent packets to it.</li>
-<li>Output is held to human limits: reaction time, smooth travel, tremor, button timing, press-rate caps.</li>
-<li>No game memory access, no code injection. The game sees only a controller.</li>
-<li>Play mode runs offline. Every decision is written to a hash-chained, sealed log.</li>
-<li>The player's channels (pad, keyboard or switches, voice, gaze) merge through shared control.</li>
-</ul>
+<main id="main">
+<section id="briefing">
+  <div class="wrap">
+    <div class="kick"><b></b>01 · Briefing</div>
+    <h2>One principle</h2>
+    <p class="quote">The player is the <em>legend</em>. The companion is the <em>body double</em>.</p>
+    <div class="cols">
+      <div class="card"><h3>The player directs</h3><p>Every controller output traces to a player intent or to a delegation the player granted. No grant, no output.</p></div>
+      <div class="card"><h3>Control returns at once</h3><p>Player input outranks the companion on every tick. There is no mode to escape from and no menu to find.</p></div>
+      <div class="card"><h3>A body, not a backdoor</h3><p>The companion sees the screen and presses a virtual controller. It never reads game memory, injects code, or moves faster than a human can.</p></div>
+      <div class="card"><h3>Local by default</h3><p>Play mode is offline. Inputs, voice and gaze never leave the machine. The network is for prep, to fetch models.</p></div>
+    </div>
+  </div>
+</section>
 
-<h2>Status</h2>
-<p>Stage 1 is code complete and unit-tested. The first end-to-end hardware run has not happened yet; the repository states what has and has not been verified.</p>
+<section id="picture">
+  <div class="wrap">
+    <div class="kick"><b></b>02 · Operating picture</div>
+    <h2>One path to the controller</h2>
+    <figure>
+      <img src="assets/architecture.svg" alt="Launcher, player input and the reflex runner send signed packets to the Governor. The Governor verifies, applies policy, logs, shapes motion with the motor model, and drives the virtual pad that the game sees. The reflex runner sees only screen pixels." width="1000" height="440">
+      <figcaption>The Governor is its own process and the only owner of the virtual pad. The reflex runner, which wraps a gaming foundation model, is just another producer of packets, with no special access.</figcaption>
+    </figure>
+  </div>
+</section>
 
-<h2>Read more</h2>
-<ul>
-<li><a href="https://github.com/POWDER-RANGER/aether">Repository</a></li>
-<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/ARCHITECTURE.md">Architecture</a></li>
-<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/SECURITY.md">Security model</a></li>
-<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/docs/REVIEW-2026-10.md">Code review, October 2026</a></li>
-</ul>
+<section id="rules">
+  <div class="wrap">
+    <div class="kick"><b></b>03 · Rules of engagement</div>
+    <h2>What the Governor enforces</h2>
+    <ol class="rules">
+      <li>Kill switch latches the halt, revokes every delegation, then writes neutral. Resume needs a new grant.</li>
+      <li>Stale, replayed and out-of-order packets are dropped.</li>
+      <li>Player input always passes and pre-empts the companion.</li>
+      <li>Companion output needs an active delegation, limited to the game pack's scopes.</li>
+      <li>Online mode: no full autopilot, and the player must be present.</li>
+      <li>Companion output only while the game window is in front.</li>
+      <li>Confidence floor, per-source rate limit, menu buttons stripped.</li>
+      <li>Watchdog: no output played for 500 ms eases the pad to neutral.</li>
+      <li>Shutdown and faults leave the pad neutral. The log is sealed on close.</li>
+      <li>No game memory access, no code injection. The game sees a controller.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap">
+    <div class="kick"><b></b>04 · Status board</div>
+    <h2>What has run, and what has not</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Area</th><th>State</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>Governor, policy, sealed log</td><td><span class="pill ok">BUILT · TESTED</span></td><td>132 tests, Linux and Windows CI</td></tr>
+        <tr><td>Virtual pad and kill switch</td><td><span class="pill ok">VERIFIED</span></td><td>Reference machine, 2026-10-21</td></tr>
+        <tr><td>Motor model scheduling</td><td><span class="pill ok">FIXED</span></td><td>October review F1/F2 with regressions</td></tr>
+        <tr><td>Voice, gaze, player input, calibration</td><td><span class="pill warn">BUILT</span></td><td>Unit-tested, not yet run on hardware</td></tr>
+        <tr><td>Window capture</td><td><span class="pill bad">UNVERIFIED</span></td><td>Test unfinished</td></tr>
+        <tr><td>NitroGen round trip and latency</td><td><span class="pill bad">UNVERIFIED</span></td><td>Weights download unfinished</td></tr>
+        <tr><td>Network lockdown</td><td><span class="pill bad">UNVERIFIED</span></td><td><code class="mono">netcheck</code> is the test</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">Nothing here is claimed before it has run. The full record is in the <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/docs/VERIFICATION.md">verification record</a>.</p>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <div class="kick"><b></b>05 · Roadmap</div>
+    <h2>Only stage 1 is committed</h2>
+    <div class="stages">
+      <div class="stage now"><div class="n">STAGE 1 · NOW</div><h3>Smoke test</h3><p>SuperTuxKart, offline. The companion drives a lap and the report is read end to end.</p><div class="gate">Gate (proposed): a clean lap, latency numbers in the report.</div></div>
+      <div class="stage"><div class="n">STAGE 2</div><h3>Measure and tune</h3><p>NitroGen latency and play quality without pausing the game. Fit the player's motor profile.</p><div class="gate">Gate (proposed): a full race with no player input.</div></div>
+      <div class="stage"><div class="n">STAGE 3</div><h3>Shared control</h3><p>Gaze, voice and pad working at once. More game packs.</p><div class="gate">Gate (proposed): a real player finishes a session on their own terms.</div></div>
+      <div class="stage"><div class="n">STAGE 4</div><h3>Planner</h3><p>Spoken orders become intents the Governor still approves.</p><div class="gate">Gates follow the data.</div></div>
+    </div>
+    <p class="note">Stages are not to scale and carry no dates. The smoke-test data decides whether the later gates hold.</p>
+  </div>
+</section>
+
+<section id="manual">
+  <div class="wrap">
+    <div class="kick"><b></b>06 · Field manual</div>
+    <h2>Read further</h2>
+    <div class="docs">
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/docs/FIELD-MANUAL.md"><b>Field manual</b><span>Player input, shared control, gaze, voice, calibration, game packs, modes.</span></a>
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/docs/SETUP-WINDOWS.md"><b>Windows setup</b><span>Install, virtual pad check, NitroGen server, lockdown, smoke test.</span></a>
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/ARCHITECTURE.md"><b>Architecture</b><span>Processes, packet life, motor scheduling, stop path.</span></a>
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/SECURITY.md"><b>Security</b><span>Threat model, trust boundaries, known limits, reporting.</span></a>
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/blob/main/docs/REVIEW-2026-10.md"><b>Code review</b><span>Thirteen findings from October 2026 and their status.</span></a>
+      <a href="https://github.com/POWDER-RANGER/powder-ranger-bot"><b>Source</b><span>MIT licensed. Python 3.11 or newer.</span></a>
+    </div>
+  </div>
+</section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <p>Aether is part of Powder Ranger, by Curtis Charles Farrar (<a href="https://github.com/POWDER-RANGER">POWDER-RANGER</a>). MIT licensed.</p>
+    <p>NitroGen, the optional reflex model, runs in its own process under NVIDIA's separate noncommercial license. This repository imports nothing from it.</p>
+  </div>
+</footer>
 </body>
 </html>
