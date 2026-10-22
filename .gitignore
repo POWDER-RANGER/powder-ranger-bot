@@ -2,7 +2,8 @@
 logs/
 STOP
 *.seal
-config/profiles/local_*.yaml
+config/profiles/local_*
+models/
 
 __pycache__/
 *.pyc

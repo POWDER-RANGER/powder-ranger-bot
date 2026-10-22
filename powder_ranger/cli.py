@@ -148,6 +148,8 @@ def cmd_launch(a: argparse.Namespace) -> int:
         print(f"Player controller: XInput slot {slot} (chosen before the virtual pad is created)")
     elif a.player_input == "keyboard":
         player_args = ["player", "--source", "keyboard"]
+    elif a.player_input == "gaze":
+        player_args = ["player", "--source", "gaze"]
     if player_args is not None and a.steady:
         player_args.append("--steady")
 
@@ -267,7 +269,16 @@ def cmd_player(a: argparse.Namespace) -> int:
     from .inputs.player import KeyboardSource, PlayerInputLoop, XInputSource
 
     s = load_settings(a.config, a.profile)
-    if a.source == "xinput":
+    if a.source == "gaze":
+        import json as _json
+        from .inputs.gaze import GazeCalibration, GazeSource, GazeStick, mediapipe_features
+        if not a.gaze_cal or not Path(a.gaze_cal).exists():
+            sys.exit("gaze needs --gaze-cal (run `python -m powder_ranger gaze-calibrate` first)")
+        data = _json.loads(Path(a.gaze_cal).read_text())
+        w, h = data["screen"]
+        src = GazeSource(mediapipe_features(a.face_model), GazeCalibration.from_dict(data["calibration"]),
+                         GazeStick(w, h))
+    elif a.source == "xinput":
         if a.slot is None:
             sys.exit("--slot is required (launch picks it before the virtual pad exists)")
         src = XInputSource(a.slot)
@@ -390,6 +401,22 @@ def cmd_report(a: argparse.Namespace) -> int:
     return 0 if r["integrity"]["chain_ok"] else 1
 
 
+def cmd_gaze_calibrate(a: argparse.Namespace) -> int:
+    import json as _json
+    from .inputs.gaze import mediapipe_features, run_calibration
+    if not Path(a.face_model).exists():
+        sys.exit(f"face model not found: {a.face_model} (download face_landmarker.task in prep mode)")
+    cal, report = run_calibration(mediapipe_features(a.face_model))
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(_json.dumps({"calibration": cal.to_dict(), "screen": report["screen"], "report": report}))
+    print(f"points used {report['points_used']}/9, missed {report['points_missed']}, "
+          f"error {report['rms_px']} px RMS -> {out}")
+    if report["rms_px"] > 120:
+        print("Error is high: check lighting and keep your head still, then run it again.")
+    return 0
+
+
 def cmd_packs(a: argparse.Namespace) -> int:
     from .packs import list_packs, load_pack
     for pid in list_packs():
@@ -469,7 +496,7 @@ def main(argv: list[str] | None = None) -> int:
     la.add_argument("--delegate", default="full_autopilot", help="scope the player grants")
     la.add_argument("--port", type=int, default=5555, help="NitroGen server port")
     la.add_argument("--require-offline", action="store_true", help="refuse to start if the network is reachable")
-    la.add_argument("--player-input", choices=["xinput", "keyboard", "none"], default="none",
+    la.add_argument("--player-input", choices=["xinput", "keyboard", "gaze", "none"], default="none",
                     help="player's own controls; they always outrank the companion")
     la.add_argument("--player-slot", type=int, help="XInput slot of the physical pad (default: auto)")
     la.add_argument("--steady", action="store_true", help="smooth the player's sticks (tremor filter)")
@@ -482,7 +509,9 @@ def main(argv: list[str] | None = None) -> int:
     pt.set_defaults(fn=cmd_padtest)
 
     pl = sub.add_parser("player")
-    pl.add_argument("--source", choices=["xinput", "keyboard"], required=True)
+    pl.add_argument("--source", choices=["xinput", "keyboard", "gaze"], required=True)
+    pl.add_argument("--gaze-cal", default="config/profiles/local_gaze.json")
+    pl.add_argument("--face-model", default="models/face_landmarker.task")
     pl.add_argument("--slot", type=int)
     pl.add_argument("--steady", action="store_true")
     pl.set_defaults(fn=cmd_player)
@@ -500,6 +529,11 @@ def main(argv: list[str] | None = None) -> int:
     ca.add_argument("--slot", type=int)
     ca.add_argument("--name", help="profile name for fit")
     ca.set_defaults(fn=cmd_calibrate)
+
+    gc = sub.add_parser("gaze-calibrate")
+    gc.add_argument("--face-model", default="models/face_landmarker.task")
+    gc.add_argument("--out", default="config/profiles/local_gaze.json")
+    gc.set_defaults(fn=cmd_gaze_calibrate)
 
     sub.add_parser("packs").set_defaults(fn=cmd_packs)
 

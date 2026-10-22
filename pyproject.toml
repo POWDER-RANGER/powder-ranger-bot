@@ -25,6 +25,10 @@ voice = [
     "sounddevice",
     "pyttsx3",
 ]
+gaze = [
+    "mediapipe",
+    "opencv-python",
+]
 dev = ["pytest"]
 
 [project.scripts]
