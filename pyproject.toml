@@ -30,3 +30,4 @@ include = ["powder_ranger*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--basetemp=.pytest_tmp"   # Windows: the default temp dir fails for usernames with spaces

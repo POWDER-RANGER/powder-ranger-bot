@@ -181,7 +181,9 @@ def cmd_padtest(a: argparse.Namespace) -> int:
     log = IntentLog(Path(s.log_dir) / f"padtest-{time.strftime('%Y%m%d-%H%M%S')}.jsonl")
     kill = KillSwitch(s.stop_file)
     kill.start_hotkeys()
-    gov = Governor(GovernorConfig(require_focus=False), MotorModel(s.motor), adapter, log, kill, lambda: True)
+    from .governor.intent_log import load_or_create_log_key
+    gov = Governor(GovernorConfig(require_focus=False), MotorModel(s.motor), adapter, log, kill, lambda: True,
+                   seal_key=load_or_create_log_key(), session_info={"purpose": "padtest"})
     steps = [
         ("Left stick UP", GamepadFrame(ly=0.8)), ("Left stick DOWN", GamepadFrame(ly=-0.8)),
         ("Left stick LEFT", GamepadFrame(lx=-0.8)), ("Left stick RIGHT", GamepadFrame(lx=0.8)),
