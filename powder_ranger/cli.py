@@ -204,6 +204,11 @@ def cmd_launch(a: argparse.Namespace) -> int:
         except subprocess.TimeoutExpired:
             gov.terminate()
         control.close()
+    print()
+    try:
+        cmd_report(argparse.Namespace(path=None, metrics=None, config=a.config, profile=a.profile))
+    except SystemExit:
+        pass
     return 0
 
 
@@ -369,6 +374,22 @@ def cmd_calibrate(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_report(a: argparse.Namespace) -> int:
+    import json as _json
+    from .report import build_report, format_report
+    path = Path(a.path) if a.path else max(Path(load_settings(a.config, a.profile).log_dir).glob("session-*.jsonl"),
+                                           key=lambda p: p.stat().st_mtime, default=None)
+    if path is None:
+        sys.exit("no session logs found")
+    metrics = Path(a.metrics) if a.metrics else path.parent / "reflex_metrics.csv"
+    r = build_report(path, metrics)
+    print(format_report(r))
+    out = path.with_suffix(".report.json")
+    out.write_text(_json.dumps(r, indent=2))
+    print(f"\nwritten: {out}")
+    return 0 if r["integrity"]["chain_ok"] else 1
+
+
 def cmd_packs(a: argparse.Namespace) -> int:
     from .packs import list_packs, load_pack
     for pid in list_packs():
@@ -481,6 +502,11 @@ def main(argv: list[str] | None = None) -> int:
     ca.set_defaults(fn=cmd_calibrate)
 
     sub.add_parser("packs").set_defaults(fn=cmd_packs)
+
+    rp = sub.add_parser("report")
+    rp.add_argument("path", nargs="?", help="session log (default: newest)")
+    rp.add_argument("--metrics", help="reflex_metrics.csv (default: next to the log)")
+    rp.set_defaults(fn=cmd_report)
     sub.add_parser("netcheck").set_defaults(fn=cmd_netcheck)
 
     v = sub.add_parser("verify-log")

@@ -42,7 +42,11 @@ See [What has and has not been verified](#what-has-and-has-not-been-verified).
 | `capture/screen.py` | Window capture with dxcam |
 | `runners/nitrogen.py` | Client for NitroGen's server; converts its actions to `GamepadFrame`s |
 | `inputs/player.py` | Player's own controls (physical XInput pad, keyboard or key-typing switches) sent as PLAYER packets; optional tremor smoothing |
-| `cli.py` | `launch`, `governor`, `reflex`, `player`, `padtest`, `netcheck`, `verify-log`, `stop` |
+| `inputs/commands.py`, `inputs/voice.py` | Local voice commands: word-level parser with negation; stop, resume, you play, my turn, jump |
+| `motor/calibrate.py` | Record the player's pad, fit their motor profile; reaction-time test |
+| `packs.py`, `packs/` | Game Packs: versioned, hashed, validated per-game settings |
+| `report.py` | Session report: integrity, decisions, latency percentiles, safety events, authorship |
+| `cli.py` | `launch`, `governor`, `reflex`, `player`, `voice`, `calibrate`, `packs`, `report`, `padtest`, `netcheck`, `verify-log`, `stop` |
 
 ## Safety rules (enforced in `GovernorPolicy`, tested in `tests/`)
 
@@ -69,6 +73,48 @@ sticks. If the player input process dies, launch halts the companion.
 `--player-input keyboard` reads `player_input.keymap` from the profile
 (see `config/profiles/example_player.yaml`). The game also receives those
 keys directly, so map switches to keys the game does not use.
+
+## Voice
+
+`launch --voice` (or `python -m powder_ranger voice`) listens locally with
+faster-whisper and answers through text-to-speech on one thread. Install with
+`pip install -e ".[voice]"`; the first run downloads the speech model, so do it
+before the offline lockdown.
+
+| Say | Effect |
+| --- | --- |
+| "stop", "halt", "freeze" | Kill switch. "Don't stop" does not trigger it. |
+| "resume" | Clears the halt. The companion still needs a new grant. |
+| "you play", "take over" / "you drive" | Grants full autopilot / driving |
+| "my turn", "I've got it" | Revokes every delegation |
+| "jump" | One press of the south button, as player input |
+| "status", "help" | Spoken answer |
+
+Squad-style orders ("move to the tower, silent", "flank left") are parsed and
+logged as player intents, and answered "I can't do that yet" until the
+planners exist.
+
+## Calibration
+
+```powershell
+python -m powder_ranger calibrate record --seconds 180     # play freely with your own pad
+python -m powder_ranger calibrate fit --file logs\calibration-<time>.jsonl --name me
+python -m powder_ranger calibrate reaction --name me        # 20 trials, full screen
+python -m powder_ranger --profile config\profiles\local_me.yaml launch --pack supertuxkart
+```
+
+Fitted from free play: button hold and gap minimums, peak press rate, stick
+movement speed (Fitts slope; the intercept reads low), tremor size and
+frequency. Reaction time comes only from the reaction test. On a synthetic
+player with known values the fit recovers them closely (`tests/test_calibrate.py`).
+
+## Game Packs and reports
+
+`launch --pack supertuxkart --start-game` starts the game straight into a
+1-lap time trial, applies the pack's process, pad type and allowed
+delegations, and logs the pack's version and content hash. When the session
+ends, launch prints the session report (`python -m powder_ranger report` for
+the newest log at any time).
 
 ## Modes: deployment and development
 
@@ -99,6 +145,8 @@ powershell -ExecutionPolicy Bypass -File scripts\lockdown_offline.ps1
 
 # 5. Smoke test: game running windowed in a single-player race
 powershell -ExecutionPolicy Bypass -File scripts\run_smoke_test.ps1 -Process supertuxkart.exe -RequireOffline
+# or, with the pack starting the game itself:
+.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --require-offline --player-input xinput
 ```
 
 Results land in `logs/` (kept local, git-ignored):
@@ -119,7 +167,7 @@ Verified on the MSI (2026-10-21, Windows 11 Insider 26220, Python 3.11):
 - SuperTuxKart 1.5 installed as `supertuxkart.exe`; a virtual DS4 pad creates
 
 Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
-53 tests passing, including a headless end-to-end run (fake NitroGen and fake
+95 tests passing, including a headless end-to-end run (fake NitroGen and fake
 capture over real ZMQ sockets to a Governor with the dry-run adapter, then a
 halt and a sealed-log check), and a `governor` CLI run with `verify-log`
 reporting chain OK and seal OK.
