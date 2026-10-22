@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/banner.svg" alt="Aether: a local, accessibility-first game companion" width="100%"></p>
+<p align="center"><img src="assets/banner.svg" alt="Æther: a local, accessibility-first game companion" width="100%"></p>
 
 <p align="center">
 <a href="https://github.com/POWDER-RANGER/powder-ranger-bot/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/POWDER-RANGER/powder-ranger-bot/actions/workflows/ci.yml/badge.svg"></a>
