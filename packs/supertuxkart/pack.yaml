@@ -1,0 +1,16 @@
+# Stage 1 smoke-test pack. SuperTuxKart is open source (GPL), gamepad-native,
+# and has no anti-cheat.
+id: supertuxkart
+version: 0.1.0
+title: SuperTuxKart 1.5
+process: supertuxkart.exe
+output: x360
+reflex: nitrogen
+online: false
+allowed_scopes: [full_autopilot, driving]
+launch:
+  exe: C:\Program Files\SuperTuxKart 1.5\supertuxkart.exe
+  # Straight into a 1-lap time trial on Lighthouse, one kart, windowed.
+  args: ["-N", "--track=lighthouse", "--numkarts=1", "--laps=1", "--mode=1",
+         "--windowed", "--screensize=1280x720"]
+  ready_after_s: 20

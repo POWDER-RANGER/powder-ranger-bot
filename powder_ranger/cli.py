@@ -50,6 +50,15 @@ def cmd_governor(a: argparse.Namespace) -> int:
     from .output.adapters import make_adapter
 
     s = load_settings(a.config, a.profile)
+    if a.online:
+        s.governor.online_mode = True
+    pack_info = {}
+    if a.pack:
+        from .packs import load_pack
+        pk = load_pack(a.pack)
+        pack_info = pk.session_info()
+        if pk.online:
+            s.governor.online_mode = True
     output = a.output or s.output
     problems = validate_settings(s, output)
     if problems:
@@ -70,7 +79,7 @@ def cmd_governor(a: argparse.Namespace) -> int:
                    seal_key=load_or_create_log_key(),
                    session_info={"config_hash": _config_hash(a.config, a.profile),
                                  "profile": s.profile_name, "mode": s.mode, "target_process": a.process,
-                                 "hotkeys": hot})
+                                 "hotkeys": hot, **pack_info})
     print(f"Governor up on {s.endpoint} | mode={s.mode} | output={adapter.name} | log={log.path}")
     print("Kill switch: Pause key" if hot else
           f"Kill switch hotkey unavailable; use `python -m powder_ranger stop` (creates {s.stop_file})")
@@ -100,6 +109,25 @@ def cmd_launch(a: argparse.Namespace) -> int:
         print("Refusing to launch: this Python can reach the internet (run scripts/lockdown_offline.ps1).")
         return 3
     s = load_settings(a.config, a.profile)
+    pack = None
+    if a.pack:
+        from .packs import load_pack
+        try:
+            pack = load_pack(a.pack)
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"Refusing to launch: {exc}")
+            return 8
+        a.process = a.process or pack.process
+        a.output = a.output or pack.output
+        if pack.online:
+            s.governor.online_mode = True
+        if a.delegate not in pack.allowed_scopes:
+            print(f"Refusing: pack {pack.id} does not allow '{a.delegate}' (allowed: {', '.join(pack.allowed_scopes)})")
+            return 4
+        print(f"Pack: {pack.title} v{pack.version} ({pack.content_hash[:12]})")
+    if not a.process:
+        print("Refusing to launch: give --process or --pack")
+        return 8
     problems = validate_settings(s, a.output or s.output)
     if problems:
         print("Refusing to launch:\n  " + "\n  ".join(problems))
@@ -123,10 +151,20 @@ def cmd_launch(a: argparse.Namespace) -> int:
     if player_args is not None and a.steady:
         player_args.append("--steady")
 
+    if a.start_game:
+        if pack is None or not pack.launch_exe:
+            print("Refusing: --start-game needs a pack with launch.exe")
+            return 8
+        print(f"Starting {pack.title}; waiting {pack.ready_after_s:.0f} s for it to load...")
+        subprocess.Popen([pack.launch_exe, *pack.launch_args])
+        time.sleep(pack.ready_after_s)
+
     env = dict(os.environ, **{KEY_ENV: os.urandom(32).hex()})
     common = [*(["--config", a.config] if a.config else []), *(["--profile", a.profile] if a.profile else [])]
     gov = subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, "governor", "--process", a.process,
-                            *(["--output", a.output] if a.output else [])], env=env)
+                            *(["--output", a.output] if a.output else []),
+                            *(["--pack", str(pack.path)] if pack else []),
+                            *(["--online"] if s.governor.online_mode else [])], env=env)
     time.sleep(1.5)
     if gov.poll() is not None:
         print("Governor failed to start.")
@@ -331,6 +369,18 @@ def cmd_calibrate(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_packs(a: argparse.Namespace) -> int:
+    from .packs import list_packs, load_pack
+    for pid in list_packs():
+        try:
+            p = load_pack(pid)
+            print(f"{p.id:<16} v{p.version:<8} {p.content_hash[:12]}  {p.title}  scopes={','.join(p.allowed_scopes)}"
+                  f"{'  ONLINE' if p.online else ''}")
+        except ValueError as exc:
+            print(f"{pid:<16} INVALID: {exc}")
+    return 0
+
+
 def _netcheck(quiet: bool = False) -> int:
     targets = [("1.1.1.1", 443), ("huggingface.co", 443), ("pypi.org", 443)]
     reachable = []
@@ -380,6 +430,8 @@ def main(argv: list[str] | None = None) -> int:
     g = sub.add_parser("governor")
     g.add_argument("--process", required=True, help="target game executable, e.g. supertuxkart.exe")
     g.add_argument("--output", choices=["x360", "ds4", "dryrun"])
+    g.add_argument("--pack", help="Game Pack folder (logged with its hash)")
+    g.add_argument("--online", action="store_true", help="online-mode rules")
     g.set_defaults(fn=cmd_governor)
 
     r = sub.add_parser("reflex")
@@ -389,7 +441,9 @@ def main(argv: list[str] | None = None) -> int:
     r.set_defaults(fn=cmd_reflex)
 
     la = sub.add_parser("launch")
-    la.add_argument("--process", required=True)
+    la.add_argument("--pack", help="Game Pack id or folder (sets process, output, allowed scopes)")
+    la.add_argument("--start-game", action="store_true", help="start the game from the pack's launch settings")
+    la.add_argument("--process")
     la.add_argument("--output", choices=["x360", "ds4", "dryrun"])
     la.add_argument("--delegate", default="full_autopilot", help="scope the player grants")
     la.add_argument("--port", type=int, default=5555, help="NitroGen server port")
@@ -426,6 +480,7 @@ def main(argv: list[str] | None = None) -> int:
     ca.add_argument("--name", help="profile name for fit")
     ca.set_defaults(fn=cmd_calibrate)
 
+    sub.add_parser("packs").set_defaults(fn=cmd_packs)
     sub.add_parser("netcheck").set_defaults(fn=cmd_netcheck)
 
     v = sub.add_parser("verify-log")
