@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powder-ranger"
+version = "0.1.0"
+description = "Local, accessibility-first game companion: the player directs, the companion plays on their behalf."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pyzmq>=25",
+    "pyyaml>=6",
+    "pillow>=10",
+]
+
+[project.optional-dependencies]
+windows = [
+    "vgamepad",   # virtual X360 / DS4 via ViGEmBus
+    "dxcam",      # screen capture
+    "psutil",
+]
+voice = [
+    "faster-whisper",
+    "sounddevice",
+    "pyttsx3",
+]
+gaze = [
+    "mediapipe",
+    "opencv-python",
+]
+dev = ["pytest>=8", "ruff"]
+
+[project.scripts]
+powder-ranger = "powder_ranger.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["powder_ranger*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--basetemp=.pytest_tmp"   # Windows: the default temp dir fails for usernames with spaces
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["history", ".pytest_tmp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# Style rules left off on purpose: one-line statements in tests, short lambdas, long comment lines,
+# zip() on equal-length sequences, and the str+Enum base kept for JSON-friendly values.
+ignore = ["E501", "E702", "E731", "E741", "B905", "UP042"]

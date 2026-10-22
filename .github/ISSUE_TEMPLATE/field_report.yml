@@ -1,0 +1,19 @@
+name: Field report
+description: Results from running the project on real hardware
+labels: [field-report]
+body:
+  - type: input
+    id: machine
+    attributes: {label: Machine, description: "CPU, GPU, RAM, Windows build", placeholder: "i7-13620H, RTX 4060 8 GB, 16 GB, Windows 11"}
+  - type: input
+    id: commit
+    attributes: {label: Commit or version}
+  - type: dropdown
+    id: step
+    attributes:
+      label: Step run
+      options: [padtest, kill switch, window capture, NitroGen server, network lockdown, smoke test, other]
+  - type: textarea
+    id: result
+    attributes: {label: What happened, description: "Include the session report or log excerpt. Remove anything personal."}
+    validations: {required: true}

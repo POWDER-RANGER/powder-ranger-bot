@@ -1,202 +1,96 @@
-<!-- ══════════════════════════════════════════ POWDER-RANGER BOT HEADER -->
-<div align="center">
+<p align="center"><img src="assets/banner.svg" alt="Aether: a local, accessibility-first game companion" width="100%"></p>
 
-[![Header](https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,35:001A00,70:00E676,100:76FF03&height=300&section=header&text=POWDER-RANGER+BOT&fontSize=70&fontColor=76FF03&animation=fadeIn&fontAlignY=40&desc=Autonomous+GTA+V+%E2%80%94+Vision+%C3%97+LLM+%C3%97+DirectInput&descColor=B2FF59&descSize=17&descAlignY=64)](https://github.com/POWDER-RANGER/powder-ranger-bot)
+<p align="center">
+<a href="https://github.com/POWDER-RANGER/powder-ranger-bot/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/POWDER-RANGER/powder-ranger-bot/actions/workflows/ci.yml/badge.svg"></a>
+<img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-f2c230?labelColor=0b0c0d">
+<img alt="License MIT" src="https://img.shields.io/badge/license-MIT-f2c230?labelColor=0b0c0d">
+<img alt="Local only" src="https://img.shields.io/badge/play%20mode-local%20only-f2c230?labelColor=0b0c0d">
+<img alt="Stage 1" src="https://img.shields.io/badge/stage-1%20smoke%20test-8a8b86?labelColor=0b0c0d">
+</p>
 
-<br>
+A local, accessibility-first game companion. **The player directs; the companion plays** through a virtual controller, from the screen alone. Part of Powder Ranger.
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Press+Start+2P&weight=700&size=16&duration=2600&pause=700&color=76FF03&center=true&vCenter=true&width=900&lines=YOLOv8+Vision+%C3%97+Ollama+LLM+Brain+%C3%97+DirectInput;CPU-only+Inference+%E2%80%94+Single-Player+Only;Autonomous+GTA+V+%E2%80%94+Autonomous+MGS5;Fast+Reflexes+%E2%80%94+Strategic+Planning+%E2%80%94+Real-time+Overlay)](https://github.com/POWDER-RANGER/powder-ranger-bot)
+> **The player is the legend. The companion is the body double.**
+> Every controller output traces to a player intent or to a delegation the player granted, and the player takes control back at any instant.
 
-<br>
+## Operating picture
 
-![](https://img.shields.io/badge/STATUS-OPERATIONAL-00E676?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/GAME-GTA_V+MGS5-76FF03?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/INFERENCE-CPU_Only-00E676?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/LICENSE-MIT-76FF03?style=for-the-badge&labelColor=0D1117)
+<p align="center"><img src="assets/architecture.svg" alt="Every input travels as a signed packet to the Governor, the only process that owns the virtual controller" width="100%"></p>
 
-</div>
+One process, the **Governor**, owns the virtual controller. Everything else, including the player's own channels, sends it signed intent packets. It decides, logs, and only then moves the pad.
 
----
+## Rules of engagement
 
-## 🎮 Overview
+Enforced in `GovernorPolicy`, the Governor and the motor model; the tests in `tests/` cover them.
 
-```
-Screen → YOLOv8n ONNX → Game State → Fast Reflex / Ollama Brain → pydirectinput
-```
+1. Kill switch latches the halt, revokes all delegations, then writes neutral output. Resume needs a new grant.
+2. Packets older than their TTL are dropped; replayed or out-of-order sequence numbers are dropped.
+3. Player input always passes and pre-empts the companion for `player_override_hold_ms`.
+4. Companion output needs an active delegation. No delegation, no output.
+5. Online mode: no full-autopilot grants; the player must have shown presence recently.
+6. Companion output only while the target game window is in front.
+7. Confidence floor, per-source rate limit, menu buttons stripped from companion output.
+8. Watchdog: no output played for 500 ms (and nothing queued) eases the pad to neutral.
+9. Shutdown and errors always leave the pad neutral; the log is sealed on close.
+10. No game memory access, no code injection: the game sees only a controller.
 
-CPU-only inference on Windows. GPU training via Google Colab (free T4).  
-Local LLM brain via Ollama (`dolphin-llama3:8b` — uncensored for game-combat instructions).
+## Status
 
-> ⚠️ **Single-player only.** Do NOT use in online modes.
+Stage 1 (pipeline smoke test) is **code complete and unit-tested**. The first end-to-end run on hardware has not happened yet.
 
----
+| Area | State |
+| --- | --- |
+| Governor, policy, kill switch, sealed log | Built; 132 tests pass on Linux and Windows CI |
+| Virtual pad, kill switch on Windows | Verified on the reference machine |
+| Player input, voice, gaze, calibration, Game Packs, reports | Built, unit-tested; not yet run on hardware |
+| Window capture, NitroGen round trip, network lockdown | **Not verified** |
 
-## 💻 Hardware Requirements
+The full record, including what is unverified, is in [docs/VERIFICATION.md](docs/VERIFICATION.md). The October 2026 code review and its fixes are in [docs/REVIEW-2026-10.md](docs/REVIEW-2026-10.md).
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | i5-8th gen | i7-10th gen+ |
-| RAM | 16 GB | 32 GB |
-| GPU (training only) | Colab T4 (free) | RTX 3060+ |
-| Storage | 10 GB free | 50 GB (datasets) |
-| OS | Windows 10 | Windows 11 |
+## Quick start (Windows)
 
----
-
-## 🚀 Quick Start
-
-```bash
-# 1. Clone
-git clone https://github.com/POWDER-RANGER/powder-ranger-bot
-cd powder-ranger-bot
-
-# 2. Environment
-python -m venv venv
-venv\\Scripts\\activate
-pip install -r requirements.txt
-
-# 3. Ollama
-winget install Ollama.Ollama
-ollama pull dolphin-llama3:8b
-# (in a separate terminal) ollama serve
-
-# 4. Dry-run (no model needed — verifies loop)
-python main.py --game gtav --dry-run
-
-# 5. After training, run live
-python main.py --game gtav
-python main.py --game mgs5
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1                 # venv, install, tests
+.venv\Scripts\python -m powder_ranger padtest --output x360                         # check the virtual pad
+powershell -ExecutionPolicy Bypass -File scripts\lockdown_offline.ps1                # play-mode lockdown (admin)
+.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --require-offline --player-input xinput
 ```
 
----
+Full walkthrough: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md). Linux or macOS can run the tests and the dry-run adapter: `pip install -e ".[dev]" && pytest`.
 
-## 🎯 Architecture
+## Documentation
 
-```
-main.py
- ├── capture/capture.py        mss screen grab → BGR numpy frame
- ├── vision/vision.py          YOLOv8n ONNX → List[Detection] (with real NMS)
- ├── state/game_state.py       Threat flags, alert state, health
- ├── brain/brain.py            Ollama REST → action JSON
- │   └── games/
- │       ├── gtav.py           Rule-based fast reflex (GTA V)
- │       └── mgs5.py           Rule-based fast reflex (MGS5)
- └── control/control.py        pydirectinput keyboard executor + KEY_MAP
-```
+| | |
+| --- | --- |
+| [Field manual](docs/FIELD-MANUAL.md) | Player input, shared control, gaze, voice, calibration, Game Packs, modes |
+| [Windows setup](docs/SETUP-WINDOWS.md) | Install, virtual pad check, NitroGen server, lockdown, smoke test |
+| [Architecture](ARCHITECTURE.md) | Processes, packet life, motor scheduling, stop path |
+| [Security](SECURITY.md) | Threat model, trust boundaries, known limits, reporting |
+| [Verification record](docs/VERIFICATION.md) | What has run, where, and what has not |
+| [Code review, Oct 2026](docs/REVIEW-2026-10.md) | Findings F1-F13 and their status |
+| [History](history/README.md) | The first prototype, kept unchanged, and what was retired |
 
-### Decision Flow (per tick)
+## Module map
 
-```
-1. Capture frame           (mss)
-2. YOLOv8n ONNX inference  (~60–100ms CPU)
-3. Update GameState
-4. fast_reflex()           (<1ms — alert/health/cone rules)
-5. Brain.decide()          (500–2000ms Ollama — only if reflex returns None)
-6. Controller.execute()    (pydirectinput)
-7. Overlay display         (optional)
-```
+| Module | Role |
+| --- | --- |
+| `powder_ranger/intent.py` | `GamepadFrame`, `IntentPacket`, `Delegation`; JSON wire format with HMAC-SHA256 signing |
+| `governor/policy.py` | The rules, pure and unit-tested (order listed in the file) |
+| `governor/governor.py` | The single path to output: verifies, decides, logs, drives the motor model and adapter |
+| `governor/intent_log.py` | Append-only hash-chained log, sealed with a machine-local key |
+| `governor/safety.py` | Latched kill switch (Pause key, STOP file, message) and focus check |
+| `motor/model.py` | Human-like output: log-normal reaction delay, minimum-jerk travel, tremor, button timing |
+| `motor/filters.py` | One Euro filter for the player's own input (tremor smoothing) |
+| `output/adapters.py` | `VGamepadAdapter` (X360/DS4) and `DryRunAdapter` |
+| `capture/screen.py` | Window capture with dxcam |
+| `runners/nitrogen.py` | Client for NitroGen's server; converts its actions to `GamepadFrame`s |
+| `inputs/player.py` | Player's own controls (physical XInput pad, keyboard or key-typing switches) sent as PLAYER packets; optional tremor smoothing |
+| `inputs/commands.py`, `inputs/voice.py` | Local voice commands: word-level parser with negation; stop, resume, you play, my turn, jump |
+| `motor/calibrate.py` | Record the player's pad, fit their motor profile; reaction-time test |
+| `packs.py`, `packs/` | Game Packs: versioned, hashed, validated per-game settings |
+| `report.py` | Session report: integrity, decisions, latency percentiles, safety events, authorship |
+| `cli.py` | `launch`, `governor`, `reflex`, `player`, `voice`, `calibrate`, `packs`, `report`, `padtest`, `netcheck`, `verify-log`, `stop` |
 
----
+## License
 
-## ⌨️ Hotkeys
-
-| Key | Action |
-|-----|--------|
-| **F9** | Toggle pause / resume |
-| **F10** | Stop bot and exit |
-| **F8** | Toggle debug overlay |
-| **Q** (overlay window) | Stop bot |
-
----
-
-## 🧠 Why dolphin-llama3:8b?
-
-Censored models refuse instructions like "shoot the enemy" or "take out the guard" and will stall the bot mid-combat. `dolphin-llama3:8b` is uncensored and purpose-fit.
-
----
-
-## 🏋️ Training Pipeline
-
-```
-1. Gameplay frames  — Roboflow dataset OR yt-dlp + ffmpeg
-2. Auto-label       — autodistill + GroundedSAM (zero manual annotation)
-3. Train            — yolov8n.pt on Colab T4 (~30–60 min, 80 epochs)
-4. Export           — best.onnx (opset=12, simplify=True)
-5. Deploy           — drop into models/
-```
-
-See `training/colab_train.md` for the full Colab notebook.
-
----
-
-## 🔮 Phase 2 Roadmap
-
-- [ ] `state/schema.py` — typed `Entity` + `WorldState` dataclasses
-- [ ] `planner/behavior_tree.py` — composable BT node system for GTA
-- [ ] `planner/goap.py` — GOAP action model + BFS planner for MGS5
-- [ ] `perception/gta_perception.py` / `mgs5_perception.py` — structured world builders
-- [ ] `agent.py` — threaded pipeline (capture / infer / plan-act workers)
-- [ ] `control/mapping.py` — explicit action registry
-- [ ] HUD pixel sampling for health and wanted level
-
----
-
-## 📈 GitHub Stats
-
-<div align="center">
-
-![Bot Stats](https://github-readme-stats.vercel.app/api?username=POWDER-RANGER&repo=powder-ranger-bot&show_icons=true&theme=merko&hide_border=true)
-
-</div>
-
----
-
-## 🔗 POWDER-RANGER Ecosystem
-
-### 🌐 Live .io Pages
-| Project | Link | Description |
-|---------|------|-------------|
-| **Main Portfolio** | [powder-ranger.github.io](https://powder-ranger.github.io) | Master portfolio with all 46 repos |
-| **POWDER-RANGER Bot** | [powder-ranger.github.io/powder-ranger-bot](https://powder-ranger.github.io/powder-ranger-bot) | Bot demo and documentation |
-| **CIVWATCH** | [powder-ranger.github.io/CIVWATCH](https://powder-ranger.github.io/CIVWATCH) | Civic transparency platform |
-| **OBLISK** | [powder-ranger.github.io/OBLISK](https://powder-ranger.github.io/OBLISK) | Multi-agent AI orchestration |
-| **AI Nexus** | [powder-ranger.github.io/ai-nexus](https://powder-ranger.github.io/ai-nexus) | Browser-based AI platform |
-| **Dollar Gravity** | [powder-ranger.github.io/dollar-gravity-framework](https://powder-ranger.github.io/dollar-gravity-framework) | USD gravity visualization |
-
-### 🔧 Core Repositories
-| Repository | Language | Purpose |
-|-----------|----------|---------|
-| **[POWDER-RANGER Bot](https://github.com/POWDER-RANGER/powder-ranger-bot)** | Python | Autonomous GTA V + MGS5 agent (this repo) |
-| **[CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH)** | TypeScript | Civic transparency platform |
-| **[OBLISK](https://github.com/POWDER-RANGER/OBLISK)** | Python | Multi-agent AI with encrypted vaults |
-| **[RED-AGENT-GOV](https://github.com/POWDER-RANGER/RED-AGENT-GOV)** | Python | Governance-enforced agent engine |
-| **[CharlesAI](https://github.com/POWDER-RANGER/CharlesAI)** | PowerShell | COMET Agent with memory & orchestration |
-| **[OBELISK-Enterprise](https://github.com/POWDER-RANGER/OBELISK-Enterprise)** | Python | $2.5M AI Governance Platform |
-| **[NSO Kryptonite](https://github.com/POWDER-RANGER/nso-kryptonite-platform)** | TypeScript | Adversarial defense command center |
-| **[AI Nexus](https://github.com/POWDER-RANGER/ai-nexus)** | JavaScript | Browser-based complete AI platform |
-| **[Guiding Light AI](https://github.com/POWDER-RANGER/guiding-light-ai)** | Rust | Values-to-policies CLI tool |
-| **[Dollar Gravity](https://github.com/POWDER-RANGER/dollar-gravity-framework)** | JavaScript | USD-centric finance-security dashboard |
-| **[Dojin D](https://github.com/POWDER-RANGER/dojin-d)** | TypeScript | ECS combat simulation engine |
-| **[Contextual Memory UI](https://github.com/POWDER-RANGER/contextual-memory-ui)** | JavaScript | AI memory infrastructure platform |
-| **[OBELISK-Desktop-AI](https://github.com/POWDER-RANGER/OBELISK-Desktop-AI)** | PowerShell | Desktop AI orchestrator |
-| **[CIVWATCH Cell Titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)** | Shell | RF observability platform |
-| **[CIVWATCH v3](https://github.com/POWDER-RANGER/civwatch-v3)** | HTML | Unified RF observability |
-
----
-
-## 🤝 Connect
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Curtis_Farrar-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/curtis-farrar-g6b)
-[![GitHub](https://img.shields.io/badge/GitHub-POWDER--RANGER-181717?style=flat&logo=github)](https://github.com/POWDER-RANGER)
-[![Portfolio](https://img.shields.io/badge/Portfolio-powder--ranger.github.io-76FF03?style=flat&logo=githubpages)](https://powder-ranger.github.io)
-[![ORCID](https://img.shields.io/badge/ORCID-0009--0008--9273--2458-A6CE39?style=flat&logo=orcid)](https://orcid.org/0009-0008-9273-2458)
-
----
-
-**Curtis Charles Farrar** | ORCID: 0009-0008-9273-2458
-
-<div align="center">
-
-[![Footer](https://capsule-render.vercel.app/api?type=waving&color=0:76FF03,35:00E676,70:001A00,100:0D1117&height=150&section=footer)](https://github.com/POWDER-RANGER/powder-ranger-bot)
-
-</div>
+MIT for this repository's code ([LICENSE](LICENSE)). NitroGen runs in its own environment and process, reached over a local socket; its code and weights are under NVIDIA's separate noncommercial license, and this repository imports nothing from it. Check NVIDIA's terms before any use beyond research.

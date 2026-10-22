@@ -1,0 +1,28 @@
+# Example player profile. Copy, rename, and adjust. Profiles stay on this
+# machine; they are never uploaded.
+
+name: example_player
+
+# The assist level and input method are recorded here for the stages that use
+# them (Stage 2+). Stage 1 reads only the governor and motor sections.
+assist_level: companion          # steady | assist | direct | companion
+primary_input: voice             # voice | gaze | switch | head | partial_controller
+
+governor:
+  player_override_hold_ms: 2000
+
+motor:
+  reaction_median_ms: 240        # a calmer companion
+  max_presses_per_sec: 6
+
+# Keyboard or adaptive-switch input (switches that type keys). Targets are
+# button names or stick/trigger directions: LX- LX+ LY- LY+ RX- RX+ RY- RY+ LT RT
+player_input:
+  keymap:
+    W: LY+
+    S: LY-
+    A: LX-
+    D: LX+
+    SPACE: SOUTH
+    E: WEST
+    Q: LEFT_SHOULDER

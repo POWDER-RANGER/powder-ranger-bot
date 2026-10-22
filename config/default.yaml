@@ -1,0 +1,40 @@
+# Powder Ranger - default settings. A player profile (config/profiles/*.yaml)
+# overrides any of these.
+
+mode: deployment             # deployment | development (see config/profiles/development.yaml)
+endpoint: tcp://127.0.0.1:5577   # Governor channel; localhost only
+tick_hz: 120                     # controller update rate
+log_dir: logs
+stop_file: ~/.powder_ranger/STOP # create this file to trip the kill switch (absolute: independent of the working directory)
+output: x360                     # x360 | ds4 | dryrun
+invert_y: false                  # set true if padtest shows up/down swapped
+
+governor:
+  confidence_floor: 0.0
+  max_packets_per_sec: 30
+  player_override_hold_ms: 1500  # companion yields this long after player input
+  online_mode: false             # true for online or competitive games
+  presence_timeout_s: 20
+  allow_menu_buttons: false      # START / BACK / GUIDE from the companion
+  blocked_scopes_online: [full_autopilot]
+  require_focus: true
+  watchdog_ms: 500
+
+motor:
+  reaction_median_ms: 200
+  reaction_sigma: 0.25
+  reaction_min_ms: 120
+  reaction_max_ms: 400
+  move_a_ms: 40
+  move_b_ms: 70
+  move_width: 0.15
+  tremor_amp: 0.012
+  tremor_hz_min: 8
+  tremor_hz_max: 12
+  drift_sigma: 0.01
+  drift_tau_s: 1.5
+  hold_threshold: 0.05
+  button_min_hold_ms: 60
+  button_min_gap_ms: 50
+  max_presses_per_sec: 8
+  humanize: true
