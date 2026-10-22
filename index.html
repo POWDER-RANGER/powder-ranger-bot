@@ -1,12 +1,52 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>POWDER-RANGER BOT</title>
-<link rel="canonical" href="https://powder-ranger.github.io/powder-ranger-bot/">
-<meta property="og:url" content="https://powder-ranger.github.io/powder-ranger-bot/">
-<meta property="og:type" content="website">
-<meta property="og:description" content="POWDER-RANGER BOT is a single-player game-agent research project combining computer vision, behavior-tree and GOAP planning, and local-model reasoning.">
-<meta property="og:title" content="POWDER-RANGER BOT">
-<meta name="description" content="POWDER-RANGER BOT is a single-player game-agent research project combining computer vision, behavior-tree and GOAP planning, and local-model reasoning."><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh}.wrap{max-width:900px;margin:0 auto;padding:40px 20px}h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.tag{display:inline-block;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fb923c;padding:4px 14px;border-radius:999px;font-size:0.75rem;margin-top:10px}.sec{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;margin-bottom:20px}.sec h2{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:14px;border-left:4px solid #ef4444;padding-left:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px}.card h3{font-size:0.85rem;font-weight:600;color:#fb923c;margin-bottom:6px}.card p{font-size:0.78rem;color:#777;line-height:1.5}.card b{font-size:1.3rem;font-weight:800;color:#fff;font-family:monospace;margin-top:6px;display:block}a.btn{display:inline-block;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;text-decoration:none;padding:12px 28px;border-radius:999px;font-weight:600;margin:6px 4px 0;font-size:0.88rem}.btm{margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;font-size:0.75rem;color:#444}.lnk{color:#a855f7}.muted{color:#888;font-size:0.82rem;margin-bottom:8px}</style>
-<link rel="stylesheet" href="https://powder-ranger.github.io/assets/brand-pages.css">
-</head><body><div class="wrap"><header><h1>POWDER-RANGER BOT</h1><p class="muted">Autonomous GTA V + MGS5 AI Agent</p><span class="tag">YOLOv8 Vision x Behavior Tree/GOAP x Ollama LLM</span></header><div class="sec"><h2>Overview</h2><p class="muted">Autonomous gaming agent for GTA V and MGS5 using YOLOv8 computer vision, Behavior Tree/GOAP planning, and Ollama LLM reasoning. CPU-only inference. Threaded pipeline.</p></div><div class="sec"><h2>Architecture</h2><div class="grid"><div class="card"><h3>Capture</h3><p>Real-time screen capture and preprocessing pipeline</p></div><div class="card"><h3>Vision</h3><p>YOLOv8 object detection for game state awareness</p></div><div class="card"><h3>Brain</h3><p>Ollama LLM for high-level decision making and planning</p></div><div class="card"><h3>Control</h3><p>DirectInput integration for precise game control</p></div></div></div><div class="sec"><h2>Links</h2><div class="grid"><div class="card"><h3>Repository</h3><a href="https://github.com/POWDER-RANGER/powder-ranger-bot" class="btn">View on GitHub</a></div><div class="card"><h3>Organization</h3><a href="https://github.com/POWDER-RANGER" class="btn">POWDER-RANGER</a></div></div></div><div class="btm"><a href="https://github.com/POWDER-RANGER">POWDER-RANGER</a> | <a href="https://github.com/POWDER-RANGER/powder-ranger-bot" class="lnk">powder-ranger-bot</a></div></div>
-<script defer src="https://powder-ranger.github.io/assets/brand-pages.js" data-repo="powder-ranger-bot"></script>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether - a local, accessibility-first game companion</title>
+<meta name="description" content="The player directs; the companion plays through a virtual controller, from the screen alone, fully local.">
+<style>
+:root{--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3b2;--line:#262b35;--acc:#7cc4ff}
+@media (prefers-color-scheme:light){:root{--bg:#fafafa;--fg:#14171c;--mut:#566070;--line:#dfe3ea;--acc:#0a6bc2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:48px 20px 64px}
+h1{font-size:2.2rem;margin:0 0 8px}
+h2{font-size:1.15rem;margin:40px 0 8px;border-top:1px solid var(--line);padding-top:24px}
+p,li{color:var(--fg)}
+.lead{color:var(--mut);font-size:1.1rem}
+a{color:var(--acc)}
+code{background:var(--line);padding:1px 6px;border-radius:4px}
+pre{background:var(--line);padding:14px;border-radius:8px;overflow:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Aether</h1>
+<p class="lead">A local, accessibility-first game companion. The player directs; the companion plays through a virtual controller, from the screen alone.</p>
+
+<h2>Principle</h2>
+<p>The player is the legend; the companion is the body double. Every controller output traces to a player intent or a delegation the player granted, and the player can take control back at any instant.</p>
+
+<h2>How it works</h2>
+<ul>
+<li>One process, the Governor, owns the virtual controller. Everything else sends signed intent packets to it.</li>
+<li>Output is held to human limits: reaction time, smooth travel, tremor, button timing, press-rate caps.</li>
+<li>No game memory access, no code injection. The game sees only a controller.</li>
+<li>Play mode runs offline. Every decision is written to a hash-chained, sealed log.</li>
+<li>The player's channels (pad, keyboard or switches, voice, gaze) merge through shared control.</li>
+</ul>
+
+<h2>Status</h2>
+<p>Stage 1 is code complete and unit-tested. The first end-to-end hardware run has not happened yet; the repository states what has and has not been verified.</p>
+
+<h2>Read more</h2>
+<ul>
+<li><a href="https://github.com/POWDER-RANGER/aether">Repository</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/ARCHITECTURE.md">Architecture</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/SECURITY.md">Security model</a></li>
+<li><a href="https://github.com/POWDER-RANGER/aether/blob/main/docs/REVIEW-2026-10.md">Code review, October 2026</a></li>
+</ul>
+</main>
 </body>
 </html>

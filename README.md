@@ -1,202 +1,220 @@
-<!-- ══════════════════════════════════════════ POWDER-RANGER BOT HEADER -->
-<div align="center">
+# Powder Ranger
 
-[![Header](https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,35:001A00,70:00E676,100:76FF03&height=300&section=header&text=POWDER-RANGER+BOT&fontSize=70&fontColor=76FF03&animation=fadeIn&fontAlignY=40&desc=Autonomous+GTA+V+%E2%80%94+Vision+%C3%97+LLM+%C3%97+DirectInput&descColor=B2FF59&descSize=17&descAlignY=64)](https://github.com/POWDER-RANGER/powder-ranger-bot)
+A local, accessibility-first game companion. The player directs; the companion
+plays on their behalf, through a virtual controller, from the screen alone.
 
-<br>
+**The player is the legend; the companion is the body double.** Every
+controller output traces to a player intent or to a delegation the player
+granted, and the player can take control back at any instant.
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Press+Start+2P&weight=700&size=16&duration=2600&pause=700&color=76FF03&center=true&vCenter=true&width=900&lines=YOLOv8+Vision+%C3%97+Ollama+LLM+Brain+%C3%97+DirectInput;CPU-only+Inference+%E2%80%94+Single-Player+Only;Autonomous+GTA+V+%E2%80%94+Autonomous+MGS5;Fast+Reflexes+%E2%80%94+Strategic+Planning+%E2%80%94+Real-time+Overlay)](https://github.com/POWDER-RANGER/powder-ranger-bot)
+Status: **Stage 1 (pipeline smoke test): code complete and unit-tested; the end-to-end run on hardware has not happened yet.**
+See [What has and has not been verified](#what-has-and-has-not-been-verified),
+[ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md) and the
+[October 2026 code review](docs/REVIEW-2026-10.md).
 
-<br>
-
-![](https://img.shields.io/badge/STATUS-OPERATIONAL-00E676?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/GAME-GTA_V+MGS5-76FF03?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/INFERENCE-CPU_Only-00E676?style=for-the-badge&labelColor=0D1117)
-![](https://img.shields.io/badge/LICENSE-MIT-76FF03?style=for-the-badge&labelColor=0D1117)
-
-</div>
-
----
-
-## 🎮 Overview
+## How it fits together
 
 ```
-Screen → YOLOv8n ONNX → Game State → Fast Reflex / Ollama Brain → pydirectinput
+ game window ──► capture ──► NitroGen reflex runner ──┐   (separate process, never touches the pad)
+                                                       │ signed IntentPackets, localhost only
+ player / launcher ── grant, revoke, halt ─────────────┤
+                                                       ▼
+                                          ┌────── GOVERNOR ──────┐  (separate process)
+                                          │ rules ─► intent log   │  hash-chained, sealed
+                                          │ kill switch, focus,   │
+                                          │ watchdog              │
+                                          └─────────┬────────────┘
+                                                    ▼
+                                              motor model  (reaction time, smooth travel,
+                                                    │       tremor, hold times, speed caps)
+                                                    ▼
+                                       virtual X360 / DS4 (ViGEmBus)  ──► game
 ```
 
-CPU-only inference on Windows. GPU training via Google Colab (free T4).  
-Local LLM brain via Ollama (`dolphin-llama3:8b` — uncensored for game-combat instructions).
+| Module | Role |
+| --- | --- |
+| `powder_ranger/intent.py` | `GamepadFrame`, `IntentPacket`, `Delegation`; JSON wire format with HMAC-SHA256 signing |
+| `governor/policy.py` | The rules, pure and unit-tested (order listed in the file) |
+| `governor/governor.py` | The single path to output: verifies, decides, logs, drives the motor model and adapter |
+| `governor/intent_log.py` | Append-only hash-chained log, sealed with a machine-local key |
+| `governor/safety.py` | Latched kill switch (Pause key, STOP file, message) and focus check |
+| `motor/model.py` | Human-like output: log-normal reaction delay, minimum-jerk travel, tremor, button timing |
+| `motor/filters.py` | One Euro filter for the player's own input (tremor smoothing) |
+| `output/adapters.py` | `VGamepadAdapter` (X360/DS4) and `DryRunAdapter` |
+| `capture/screen.py` | Window capture with dxcam |
+| `runners/nitrogen.py` | Client for NitroGen's server; converts its actions to `GamepadFrame`s |
+| `inputs/player.py` | Player's own controls (physical XInput pad, keyboard or key-typing switches) sent as PLAYER packets; optional tremor smoothing |
+| `inputs/commands.py`, `inputs/voice.py` | Local voice commands: word-level parser with negation; stop, resume, you play, my turn, jump |
+| `motor/calibrate.py` | Record the player's pad, fit their motor profile; reaction-time test |
+| `packs.py`, `packs/` | Game Packs: versioned, hashed, validated per-game settings |
+| `report.py` | Session report: integrity, decisions, latency percentiles, safety events, authorship |
+| `cli.py` | `launch`, `governor`, `reflex`, `player`, `voice`, `calibrate`, `packs`, `report`, `padtest`, `netcheck`, `verify-log`, `stop` |
 
-> ⚠️ **Single-player only.** Do NOT use in online modes.
+## Safety rules (enforced in `GovernorPolicy`, tested in `tests/`)
 
----
+1. Kill switch halts everything, writes neutral output first, revokes all delegations. Resume needs a new grant.
+2. Packets older than their TTL are dropped; replayed or out-of-order sequence numbers are dropped.
+3. Player input always passes and pre-empts the companion for `player_override_hold_ms`.
+4. Companion output needs an active delegation. No delegation, no output.
+5. Online mode: no full-autopilot grants; the player must have shown presence recently.
+6. Companion output only while the target game window is in front.
+7. Confidence floor, per-source rate limit, menu buttons stripped from companion output.
+8. Watchdog: no output played for 500 ms (and nothing queued) eases the pad to neutral.
+9. Shutdown and errors always leave the pad neutral; the log is sealed on close.
+10. No game memory access, no code injection: the game sees only a controller.
 
-## 💻 Hardware Requirements
+## Player input
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | i5-8th gen | i7-10th gen+ |
-| RAM | 16 GB | 32 GB |
-| GPU (training only) | Colab T4 (free) | RTX 3060+ |
-| Storage | 10 GB free | 50 GB (datasets) |
-| OS | Windows 10 | Windows 11 |
+`launch --player-input xinput` reads your physical pad and sends it to the
+Governor as player input, which always outranks the companion. The virtual
+pad is also an XInput device, so the physical pad's slot is chosen **before**
+the virtual pad exists; launch refuses if zero or several pads are connected
+(pass `--player-slot` to choose). Add `--steady` to smooth tremor from the
+sticks. If the player input process dies, launch halts the companion.
 
----
+`--player-input keyboard` reads `player_input.keymap` from the profile
+(see `config/profiles/example_player.yaml`). The game also receives those
+keys directly, so map switches to keys the game does not use.
 
-## 🚀 Quick Start
+## Shared control
 
-```bash
-# 1. Clone
-git clone https://github.com/POWDER-RANGER/powder-ranger-bot
-cd powder-ranger-bot
+A player packet with no claims takes the whole pad: the companion yields
+everything for `player_override_hold_ms`. A packet that **claims** specific
+controls (`lx`, `ly`, `rx`, `ry`, `lt`, `rt`, `buttons`) owns only those, for
+`claim_ttl_ms` after each update; the companion keeps the rest. Gaze uses
+this: look where you want to go and you own the steering, while the companion
+keeps throttle and the other controls. Only player packets can claim.
 
-# 2. Environment
-python -m venv venv
-venv\\Scripts\\activate
-pip install -r requirements.txt
+## Gaze
 
-# 3. Ollama
-winget install Ollama.Ollama
-ollama pull dolphin-llama3:8b
-# (in a separate terminal) ollama serve
-
-# 4. Dry-run (no model needed — verifies loop)
-python main.py --game gtav --dry-run
-
-# 5. After training, run live
-python main.py --game gtav
-python main.py --game mgs5
+```powershell
+pip install -e ".[gaze]"            # MediaPipe + OpenCV; prep mode
+# download face_landmarker.task (MediaPipe) to models\ in prep mode
+python -m powder_ranger gaze-calibrate          # 9 dots, full screen
+python -m powder_ranger launch --pack supertuxkart --player-input gaze
 ```
 
----
+Iris position inside each eye opening is mapped to the screen by a quadratic
+fit from the 9 calibration points. A deliberate long blink (450 ms or more)
+taps the south button; normal blinks and lost-face frames never do.
 
-## 🎯 Architecture
+## Voice
 
-```
-main.py
- ├── capture/capture.py        mss screen grab → BGR numpy frame
- ├── vision/vision.py          YOLOv8n ONNX → List[Detection] (with real NMS)
- ├── state/game_state.py       Threat flags, alert state, health
- ├── brain/brain.py            Ollama REST → action JSON
- │   └── games/
- │       ├── gtav.py           Rule-based fast reflex (GTA V)
- │       └── mgs5.py           Rule-based fast reflex (MGS5)
- └── control/control.py        pydirectinput keyboard executor + KEY_MAP
-```
+`launch --voice` (or `python -m powder_ranger voice`) listens locally with
+faster-whisper and answers through text-to-speech on one thread. Install with
+`pip install -e ".[voice]"`; the first run downloads the speech model, so do it
+before the offline lockdown.
 
-### Decision Flow (per tick)
+| Say | Effect |
+| --- | --- |
+| "stop", "halt", "freeze" | Kill switch. "Don't stop" does not trigger it. |
+| "resume" | Clears the halt. The companion still needs a new grant. |
+| "you play", "take over" / "you drive" | Grants full autopilot / driving |
+| "my turn", "I've got it" | Revokes every delegation |
+| "jump" | One press of the south button, as player input |
+| "status", "help" | Spoken answer |
 
-```
-1. Capture frame           (mss)
-2. YOLOv8n ONNX inference  (~60–100ms CPU)
-3. Update GameState
-4. fast_reflex()           (<1ms — alert/health/cone rules)
-5. Brain.decide()          (500–2000ms Ollama — only if reflex returns None)
-6. Controller.execute()    (pydirectinput)
-7. Overlay display         (optional)
-```
+Squad-style orders ("move to the tower, silent", "flank left") are parsed and
+logged as player intents, and answered "I can't do that yet" until the
+planners exist.
 
----
+## Calibration
 
-## ⌨️ Hotkeys
-
-| Key | Action |
-|-----|--------|
-| **F9** | Toggle pause / resume |
-| **F10** | Stop bot and exit |
-| **F8** | Toggle debug overlay |
-| **Q** (overlay window) | Stop bot |
-
----
-
-## 🧠 Why dolphin-llama3:8b?
-
-Censored models refuse instructions like "shoot the enemy" or "take out the guard" and will stall the bot mid-combat. `dolphin-llama3:8b` is uncensored and purpose-fit.
-
----
-
-## 🏋️ Training Pipeline
-
-```
-1. Gameplay frames  — Roboflow dataset OR yt-dlp + ffmpeg
-2. Auto-label       — autodistill + GroundedSAM (zero manual annotation)
-3. Train            — yolov8n.pt on Colab T4 (~30–60 min, 80 epochs)
-4. Export           — best.onnx (opset=12, simplify=True)
-5. Deploy           — drop into models/
+```powershell
+python -m powder_ranger calibrate record --seconds 180     # play freely with your own pad
+python -m powder_ranger calibrate fit --file logs\calibration-<time>.jsonl --name me
+python -m powder_ranger calibrate reaction --name me        # 20 trials, full screen
+python -m powder_ranger --profile config\profiles\local_me.yaml launch --pack supertuxkart
 ```
 
-See `training/colab_train.md` for the full Colab notebook.
+Fitted from free play: button hold and gap minimums, peak press rate, stick
+movement speed (Fitts slope; the intercept reads low), tremor size and
+frequency. Reaction time comes only from the reaction test. On a synthetic
+player with known values the fit recovers them closely (`tests/test_calibrate.py`).
 
----
+## Game Packs and reports
 
-## 🔮 Phase 2 Roadmap
+`launch --pack supertuxkart --start-game` starts the game straight into a
+1-lap time trial, applies the pack's process, pad type and allowed
+delegations, and logs the pack's version and content hash. When the session
+ends, launch prints the session report (`python -m powder_ranger report` for
+the newest log at any time).
 
-- [ ] `state/schema.py` — typed `Entity` + `WorldState` dataclasses
-- [ ] `planner/behavior_tree.py` — composable BT node system for GTA
-- [ ] `planner/goap.py` — GOAP action model + BFS planner for MGS5
-- [ ] `perception/gta_perception.py` / `mgs5_perception.py` — structured world builders
-- [ ] `agent.py` — threaded pipeline (capture / infer / plan-act workers)
-- [ ] `control/mapping.py` — explicit action registry
-- [ ] HUD pixel sampling for health and wanted level
+## Modes: deployment and development
 
----
+`mode: deployment` (default) is checked against human-limit bounds at start
+(`DEPLOYMENT_BOUNDS` in `config.py`); a session outside them refuses to start.
 
-## 📈 GitHub Stats
+`config/profiles/development.yaml` switches to `mode: development` for
+benchmarking: humanizing off, higher rates. Development runs isolated only:
+it refuses `online_mode`. The kill switch, neutral-on-halt, packet validation
+and focus checks are the same in both modes. A deployment session cannot
+inherit development values: `tests/test_governor.py::test_dev_settings_cannot_leak_into_deployment`.
 
-<div align="center">
+## Windows setup (the MSI)
 
-![Bot Stats](https://github-readme-stats.vercel.app/api?username=POWDER-RANGER&repo=powder-ranger-bot&show_icons=true&theme=merko&hide_border=true)
+```powershell
+# 1. Runtime venv + tests
+powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
 
-</div>
+# 2. Check the virtual pad: open joy.cpl > Properties, then
+.venv\Scripts\python -m powder_ranger padtest --output x360
 
----
+# 3. NitroGen server (its own venv, weights at %USERPROFILE%\Aether\weights\ng.pt)
+powershell -ExecutionPolicy Bypass -File scripts\start_nitrogen_server.ps1
 
-## 🔗 POWDER-RANGER Ecosystem
+# 4. Play-mode lockdown (Administrator), then confirm
+powershell -ExecutionPolicy Bypass -File scripts\lockdown_offline.ps1
+.venv\Scripts\python -m powder_ranger netcheck
 
-### 🌐 Live .io Pages
-| Project | Link | Description |
-|---------|------|-------------|
-| **Main Portfolio** | [powder-ranger.github.io](https://powder-ranger.github.io) | Master portfolio with all 46 repos |
-| **POWDER-RANGER Bot** | [powder-ranger.github.io/powder-ranger-bot](https://powder-ranger.github.io/powder-ranger-bot) | Bot demo and documentation |
-| **CIVWATCH** | [powder-ranger.github.io/CIVWATCH](https://powder-ranger.github.io/CIVWATCH) | Civic transparency platform |
-| **OBLISK** | [powder-ranger.github.io/OBLISK](https://powder-ranger.github.io/OBLISK) | Multi-agent AI orchestration |
-| **AI Nexus** | [powder-ranger.github.io/ai-nexus](https://powder-ranger.github.io/ai-nexus) | Browser-based AI platform |
-| **Dollar Gravity** | [powder-ranger.github.io/dollar-gravity-framework](https://powder-ranger.github.io/dollar-gravity-framework) | USD gravity visualization |
+# 5. Smoke test: game running windowed in a single-player race
+powershell -ExecutionPolicy Bypass -File scripts\run_smoke_test.ps1 -Process supertuxkart.exe -RequireOffline
+# or, with the pack starting the game itself:
+.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --require-offline --player-input xinput
+```
 
-### 🔧 Core Repositories
-| Repository | Language | Purpose |
-|-----------|----------|---------|
-| **[POWDER-RANGER Bot](https://github.com/POWDER-RANGER/powder-ranger-bot)** | Python | Autonomous GTA V + MGS5 agent (this repo) |
-| **[CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH)** | TypeScript | Civic transparency platform |
-| **[OBLISK](https://github.com/POWDER-RANGER/OBLISK)** | Python | Multi-agent AI with encrypted vaults |
-| **[RED-AGENT-GOV](https://github.com/POWDER-RANGER/RED-AGENT-GOV)** | Python | Governance-enforced agent engine |
-| **[CharlesAI](https://github.com/POWDER-RANGER/CharlesAI)** | PowerShell | COMET Agent with memory & orchestration |
-| **[OBELISK-Enterprise](https://github.com/POWDER-RANGER/OBELISK-Enterprise)** | Python | $2.5M AI Governance Platform |
-| **[NSO Kryptonite](https://github.com/POWDER-RANGER/nso-kryptonite-platform)** | TypeScript | Adversarial defense command center |
-| **[AI Nexus](https://github.com/POWDER-RANGER/ai-nexus)** | JavaScript | Browser-based complete AI platform |
-| **[Guiding Light AI](https://github.com/POWDER-RANGER/guiding-light-ai)** | Rust | Values-to-policies CLI tool |
-| **[Dollar Gravity](https://github.com/POWDER-RANGER/dollar-gravity-framework)** | JavaScript | USD-centric finance-security dashboard |
-| **[Dojin D](https://github.com/POWDER-RANGER/dojin-d)** | TypeScript | ECS combat simulation engine |
-| **[Contextual Memory UI](https://github.com/POWDER-RANGER/contextual-memory-ui)** | JavaScript | AI memory infrastructure platform |
-| **[OBELISK-Desktop-AI](https://github.com/POWDER-RANGER/OBELISK-Desktop-AI)** | PowerShell | Desktop AI orchestrator |
-| **[CIVWATCH Cell Titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)** | Shell | RF observability platform |
-| **[CIVWATCH v3](https://github.com/POWDER-RANGER/civwatch-v3)** | HTML | Unified RF observability |
+Results land in `logs/` (kept local, git-ignored):
+`session-*.jsonl` (verify with `python -m powder_ranger verify-log <file>`) and
+`reflex_metrics.csv` (capture and inference time per chunk). Packet age at
+the Governor is in each intent record (`age_ms`).
 
----
+## What has and has not been verified
 
-## 🤝 Connect
+Verified on the MSI (2026-10-21, Windows 11 Insider 26220, Python 3.11):
+- `pytest`: 53 passed (needs the repo-local temp dir, now in `pyproject.toml`)
+- `padtest --output x360`, read back over XInput: every axis reached +/-0.8 in
+  the right direction (+y = up, so `invert_y: false`), LT reached 255, all 10
+  buttons registered, the pad ended neutral; log chain OK, seal OK
+- Governor CLI: Pause hotkey registers; a synthesized Pause keypress tripped the
+  kill switch; the STOP file tripped it too
+- CUDA PyTorch (torch 2.11 + cu128) sees the RTX 4060; NitroGen's dependencies import
+- SuperTuxKart 1.5 installed as `supertuxkart.exe`; a virtual DS4 pad creates
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Curtis_Farrar-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/curtis-farrar-g6b)
-[![GitHub](https://img.shields.io/badge/GitHub-POWDER--RANGER-181717?style=flat&logo=github)](https://github.com/POWDER-RANGER)
-[![Portfolio](https://img.shields.io/badge/Portfolio-powder--ranger.github.io-76FF03?style=flat&logo=githubpages)](https://powder-ranger.github.io)
-[![ORCID](https://img.shields.io/badge/ORCID-0009--0008--9273--2458-A6CE39?style=flat&logo=orcid)](https://orcid.org/0009-0008-9273-2458)
+Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
+132 tests passing, including a headless end-to-end run (fake NitroGen and fake
+capture over real ZMQ sockets to a Governor with the dry-run adapter, then a
+halt and a sealed-log check), and a `governor` CLI run with `verify-log`
+reporting chain OK and seal OK.
 
----
+The review fixes (docs/REVIEW-2026-10.md) have not yet run on the MSI. Unverified until the MSI runs them:
+- DS4 axis direction (XInput cannot read a DS4; check in joy.cpl)
+- Reading a physical pad through XInput (no physical pad was connected)
+- dxcam capture of the game window
+- NitroGen server round trip, real inference latency, and play quality without pausing the game
+- The firewall lockdown (netcheck is the test)
 
-**Curtis Charles Farrar** | ORCID: 0009-0008-9273-2458
+## NitroGen and licensing
 
-<div align="center">
+NitroGen runs in its own venv and process, reached over a local socket. Its
+code and weights are under NVIDIA's noncommercial license (research use
+only). Powder Ranger's own code imports nothing from NitroGen. Powder Ranger's own code is MIT-licensed (see `LICENSE`); NitroGen's weights
+are not, so check NVIDIA's terms before any use beyond research.
 
-[![Footer](https://capsule-render.vercel.app/api?type=waving&color=0:76FF03,35:00E676,70:001A00,100:0D1117&height=150&section=footer)](https://github.com/POWDER-RANGER/powder-ranger-bot)
+NitroGen's server binds all network interfaces and exchanges pickle, which
+can execute code if a stranger reaches it. `lockdown_offline.ps1` blocks
+inbound port 5555; keep it running only on this machine.
 
-</div>
+## History
+
+`history/` keeps the original prototype unchanged, with notes on what carried
+forward and what was retired.
