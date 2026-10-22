@@ -32,6 +32,7 @@ class GovernorConfig:
     blocked_scopes_online: tuple[str, ...] = ("full_autopilot",)
     require_focus: bool = True
     watchdog_ms: int = 500                     # no allowed packet this long -> neutral output
+    claim_ttl_ms: int = 250                    # a partial player claim lasts this long without refresh
 
 
 @dataclass
@@ -105,8 +106,10 @@ class GovernorPolicy:
         self.last_seq[key] = p.seq
 
         if p.source is Source.PLAYER:
-            self.last_player_input = now
             self.last_presence = now
+            if p.claims:                       # shared control: player owns some controls only
+                return Decision(True, [f"player input (claims {','.join(p.claims)})"], p)
+            self.last_player_input = now       # full takeover: companion yields everything
             return Decision(True, ["player input"], p)
 
         # ---- everything below is companion output ----

@@ -74,6 +74,28 @@ sticks. If the player input process dies, launch halts the companion.
 (see `config/profiles/example_player.yaml`). The game also receives those
 keys directly, so map switches to keys the game does not use.
 
+## Shared control
+
+A player packet with no claims takes the whole pad: the companion yields
+everything for `player_override_hold_ms`. A packet that **claims** specific
+controls (`lx`, `ly`, `rx`, `ry`, `lt`, `rt`, `buttons`) owns only those, for
+`claim_ttl_ms` after each update; the companion keeps the rest. Gaze uses
+this: look where you want to go and you own the steering, while the companion
+keeps throttle and the other controls. Only player packets can claim.
+
+## Gaze
+
+```powershell
+pip install -e ".[gaze]"            # MediaPipe + OpenCV; prep mode
+# download face_landmarker.task (MediaPipe) to models\ in prep mode
+python -m powder_ranger gaze-calibrate          # 9 dots, full screen
+python -m powder_ranger launch --pack supertuxkart --player-input gaze
+```
+
+Iris position inside each eye opening is mapped to the screen by a quadratic
+fit from the 9 calibration points. A deliberate long blink (450 ms or more)
+taps the south button; normal blinks and lost-face frames never do.
+
 ## Voice
 
 `launch --voice` (or `python -m powder_ranger voice`) listens locally with
@@ -167,7 +189,7 @@ Verified on the MSI (2026-10-21, Windows 11 Insider 26220, Python 3.11):
 - SuperTuxKart 1.5 installed as `supertuxkart.exe`; a virtual DS4 pad creates
 
 Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
-95 tests passing, including a headless end-to-end run (fake NitroGen and fake
+108 tests passing, including a headless end-to-end run (fake NitroGen and fake
 capture over real ZMQ sockets to a Governor with the dry-run adapter, then a
 halt and a sealed-log check), and a `governor` CLI run with `verify-log`
 reporting chain OK and seal OK.

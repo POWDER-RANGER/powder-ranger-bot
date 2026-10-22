@@ -45,6 +45,7 @@ class Governor:
         self.clock = clock
         self._out_lock = threading.Lock()
         self._last_allowed: float | None = None
+        self._claims: dict[str, tuple[object, float]] = {}   # control -> (player value, time)
         self._watchdog_neutral = False
         self.running = True
         self.stats = {"allowed": 0, "denied": 0, "bad_signature": 0}
@@ -57,6 +58,7 @@ class Governor:
     def _on_trip(self, reason: str) -> None:
         """May run on the hotkey thread: neutral output first, then bookkeeping."""
         with self._out_lock:
+            self._claims.clear()
             self.adapter.apply(self.motor.hard_neutral())
         self.policy.halt(reason)
         self.policy.revoke()
@@ -79,13 +81,20 @@ class Governor:
             d = self.policy.evaluate(p, now, focused)
             self.log.append("intent", allow=d.allow, reasons=d.reasons, source=p.source.value,
                             age_ms=round((now - p.created_at) * 1000.0, 1),
-                            seq=p.seq, producer=p.producer, delegation_id=p.delegation_id,
+                            seq=p.seq, producer=p.producer, claims=list(p.claims), delegation_id=p.delegation_id,
                             player_intent_ref=p.player_intent_ref, confidence=p.confidence,
                             frames=len(p.frames), note=p.note)
-            if d.allow and d.packet is not None:
+            if d.allow and d.packet is not None and d.packet.claims:
+                self.stats["allowed"] += 1
+                f = d.packet.frames[-1]
+                for c in d.packet.claims:
+                    self._claims[c] = (f.buttons if c == "buttons" else getattr(f, c), now)
+            elif d.allow and d.packet is not None:
                 self.stats["allowed"] += 1
                 self._last_allowed = now
                 self._watchdog_neutral = False
+                if d.packet.source.value == "player":
+                    self._claims.clear()                 # full takeover supersedes partial claims
                 self.motor.schedule(d.packet.frames, d.packet.frame_dt_ms, d.packet.source, now)
             else:
                 self.stats["denied"] += 1
@@ -136,9 +145,19 @@ class Governor:
             self._watchdog_neutral = True
             self.log.append("watchdog", note=f"no approved intent for {self.cfg.watchdog_ms} ms; easing to neutral")
         with self._out_lock:
-            frame = self.motor.step(now)
+            frame = self._merge_claims(self.motor.step(now), now)
             self.adapter.apply(frame)
         return frame
+
+    def _merge_claims(self, f: GamepadFrame, now: float) -> GamepadFrame:
+        ttl = self.cfg.claim_ttl_ms / 1000.0
+        live = {c: v for c, (v, t) in self._claims.items() if now - t <= ttl}
+        for c in [c for c in self._claims if c not in live]:
+            del self._claims[c]
+        if not live:
+            return f
+        vals = {a: live.get(a, getattr(f, a)) for a in ("lx", "ly", "rx", "ry", "lt", "rt")}
+        return GamepadFrame(**vals, buttons=live.get("buttons", f.buttons))
 
     def close(self) -> None:
         """Always leaves the controller neutral, even if the adapter misbehaves."""

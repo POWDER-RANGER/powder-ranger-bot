@@ -9,6 +9,8 @@ Sources here:
 
 PlayerInputLoop:
   - sends the player's state while it is non-neutral (the player is acting)
+  - sources with a claims(frame) method send partial claims (shared control:
+    e.g. gaze owns steering, the companion keeps throttle); others take the whole pad
   - sends one neutral frame when the player lets go, then goes quiet so the
     companion can resume after player_override_hold_ms
   - optional One Euro smoothing of sticks (the "Steady" assist level)
@@ -182,7 +184,7 @@ class FakeSource:
 # ---------------------------------------------------------------------------
 
 class PlayerInputLoop:
-    def __init__(self, source: InputSource, send: Callable[[GamepadFrame], None],
+    def __init__(self, source: InputSource, send: Callable[..., None],
                  presence: Callable[[str], None] | None = None, steady: bool = False,
                  presence_every_s: float = 2.0, clock: Callable[[], float] = time.monotonic):
         self.source = source
@@ -222,7 +224,12 @@ class PlayerInputLoop:
                 self.presence(self.source.name)
                 self._last_presence = t
             self._was_active = True
-            self.send(f)
+            claims_fn = getattr(self.source, "claims", None)
+            claims = tuple(claims_fn(f)) if claims_fn else ()
+            if claims:
+                self.send(f, claims)
+            else:
+                self.send(f)
             return f
         if self._was_active:                 # just let go: one neutral, then quiet
             self._was_active = False

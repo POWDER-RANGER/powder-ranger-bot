@@ -195,6 +195,11 @@ class GazeSource:
         self._tap_until = 0.0
         self.last_point: np.ndarray | None = None
 
+    def claims(self, f: GamepadFrame) -> tuple[str, ...]:
+        """Gaze owns steering (and vertical aim if enabled); buttons only while blink-tapping."""
+        c = ("lx", "ly") if self.stick.vertical else ("lx",)
+        return c + (("buttons",) if f.buttons else ())
+
     def read(self) -> GamepadFrame:
         t = self.clock()
         got = self.features_fn()

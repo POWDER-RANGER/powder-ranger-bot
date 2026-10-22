@@ -23,6 +23,8 @@ BUTTONS: tuple[str, ...] = (
     "START", "BACK", "GUIDE",
 )
 MENU_BUTTONS: frozenset[str] = frozenset({"START", "BACK", "GUIDE"})
+# Controls a partial player packet can claim (shared control). No claims = the whole pad.
+CLAIMABLE: tuple[str, ...] = ("lx", "ly", "rx", "ry", "lt", "rt", "buttons")
 
 
 class Source(str, Enum):
@@ -105,9 +107,18 @@ class IntentPacket:
     player_intent_ref: str | None = None
     note: str = ""
     producer: str = ""                # one id per sending process; replay checks are per producer
+    claims: tuple[str, ...] = ()      # player only: controls this packet owns; () = the whole pad
+
+    def __post_init__(self) -> None:
+        bad = set(self.claims) - set(CLAIMABLE)
+        if bad:
+            raise ValueError(f"unknown claims: {sorted(bad)}")
+        if self.claims and self.source is not Source.PLAYER:
+            raise ValueError("only player packets can claim controls")
 
     def to_dict(self) -> dict:
         return {
+            "claims": list(self.claims),
             "producer": self.producer,
             "seq": self.seq,
             "source": self.source.value,
@@ -135,6 +146,7 @@ class IntentPacket:
             player_intent_ref=d.get("player_intent_ref"),
             note=d.get("note", ""),
             producer=str(d.get("producer", "")),
+            claims=tuple(d.get("claims", ())),
         )
 
 

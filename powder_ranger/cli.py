@@ -289,8 +289,8 @@ def cmd_player(a: argparse.Namespace) -> int:
             sys.exit("keyboard input needs player_input.keymap in the profile")
         src = KeyboardSource(keymap)
     client = GovernorClient(s.endpoint, _session_key(), Source.PLAYER)
-    loop = PlayerInputLoop(src, lambda f: client.send_frames([f], frame_dt_ms=1000 / 120, ttl_ms=150,
-                                                             note=f"player:{src.name}"),
+    loop = PlayerInputLoop(src, lambda f, claims=(): client.send_frames([f], frame_dt_ms=1000 / 120, ttl_ms=150,
+                                                                         note=f"player:{src.name}", claims=claims),
                            presence=client.presence, steady=a.steady)
     print(f"Player input: {src.name}{' (steady)' if a.steady else ''}")
     try:

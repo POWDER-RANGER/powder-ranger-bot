@@ -36,12 +36,12 @@ class GovernorClient:
     def send_frames(self, frames: list[GamepadFrame] | tuple[GamepadFrame, ...], *,
                     frame_dt_ms: float, ttl_ms: int = 250, confidence: float = 1.0,
                     delegation_id: str | None = None, player_intent_ref: str | None = None,
-                    note: str = "") -> int:
+                    note: str = "", claims: tuple[str, ...] = ()) -> int:
         seq = next(self._seq)
         p = IntentPacket(seq=seq, source=self.source, created_at=self.clock(), ttl_ms=ttl_ms,
                          frames=tuple(frames), frame_dt_ms=frame_dt_ms, confidence=confidence,
                          delegation_id=delegation_id, player_intent_ref=player_intent_ref, note=note,
-                         producer=self.producer)
+                         producer=self.producer, claims=tuple(claims))
         self._send("intent", p.to_dict())
         return seq
 
