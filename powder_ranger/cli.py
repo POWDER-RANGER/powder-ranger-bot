@@ -140,6 +140,8 @@ def cmd_launch(a: argparse.Namespace) -> int:
 
     player = (subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, *player_args], env=env)
               if player_args is not None else None)
+    voice = (subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, "voice"], env=env)
+             if a.voice else None)
     reflex = subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, "reflex", "--process", a.process,
                                "--delegation", delegation.id, "--port", str(a.port)], env=env)
     try:
@@ -155,7 +157,7 @@ def cmd_launch(a: argparse.Namespace) -> int:
         print("Stopping...")
     finally:
         control.revoke()
-        for proc in (reflex, player):
+        for proc in (reflex, player, voice):
             if proc is not None and proc.poll() is None:
                 proc.terminate()
         control.shutdown()
@@ -246,6 +248,36 @@ def cmd_player(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_voice(a: argparse.Namespace) -> int:
+    """Local voice commands: stop, resume, you play, my turn, jump, status."""
+    from .governor.client import GovernorClient
+    from .inputs.voice import Speaker, VoiceDispatcher, VoiceListener
+
+    s = load_settings(a.config, a.profile)
+    key = _session_key()
+    control = GovernorClient(s.endpoint, key, Source.PLAYER)
+    speaker = Speaker(enabled=not a.no_tts)
+    disp = VoiceDispatcher(control.send_message,
+                           lambda fs: control.send_frames(fs, frame_dt_ms=100, ttl_ms=300, note="voice tap"),
+                           speaker.say)
+
+    def on_text(text: str) -> None:
+        cmd = disp.handle_text(text)
+        print(f"heard: {text!r} -> {cmd.verb if cmd else 'no command'}")
+
+    print(f"Voice: loading {a.model} (first run downloads it; play mode must have it cached)")
+    listener = VoiceListener(on_text, model=a.model)
+    speaker.say("Listening.")
+    try:
+        listener.run()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        speaker.close()
+        control.close()
+    return 0
+
+
 def _netcheck(quiet: bool = False) -> int:
     targets = [("1.1.1.1", 443), ("huggingface.co", 443), ("pypi.org", 443)]
     reachable = []
@@ -313,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="player's own controls; they always outrank the companion")
     la.add_argument("--player-slot", type=int, help="XInput slot of the physical pad (default: auto)")
     la.add_argument("--steady", action="store_true", help="smooth the player's sticks (tremor filter)")
+    la.add_argument("--voice", action="store_true", help="start local voice commands (stop, you play, my turn)")
     la.set_defaults(fn=cmd_launch)
 
     pt = sub.add_parser("padtest")
@@ -325,6 +358,11 @@ def main(argv: list[str] | None = None) -> int:
     pl.add_argument("--slot", type=int)
     pl.add_argument("--steady", action="store_true")
     pl.set_defaults(fn=cmd_player)
+
+    vo = sub.add_parser("voice")
+    vo.add_argument("--model", default="base.en", help="faster-whisper model name or local path")
+    vo.add_argument("--no-tts", action="store_true", help="print replies instead of speaking")
+    vo.set_defaults(fn=cmd_voice)
 
     sub.add_parser("netcheck").set_defaults(fn=cmd_netcheck)
 

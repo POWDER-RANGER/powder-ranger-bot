@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import itertools
 import time
+import uuid
 
 from ..intent import Delegation, GamepadFrame, IntentPacket, Source, sign_message
 
@@ -24,6 +25,10 @@ class GovernorClient:
         # Start sequence numbers from the clock so a restarted producer is never
         # mistaken for a replay of the old one.
         self._seq = itertools.count(int(time.time() * 1000))
+        self.producer = f"{source.value}-{uuid.uuid4().hex[:8]}"
+
+    def send_message(self, msg_type: str, body: dict) -> None:
+        self._send(msg_type, body)
 
     def _send(self, msg_type: str, body: dict) -> None:
         self._sock.send(sign_message(self.key, msg_type, body))
@@ -35,7 +40,8 @@ class GovernorClient:
         seq = next(self._seq)
         p = IntentPacket(seq=seq, source=self.source, created_at=self.clock(), ttl_ms=ttl_ms,
                          frames=tuple(frames), frame_dt_ms=frame_dt_ms, confidence=confidence,
-                         delegation_id=delegation_id, player_intent_ref=player_intent_ref, note=note)
+                         delegation_id=delegation_id, player_intent_ref=player_intent_ref, note=note,
+                         producer=self.producer)
         self._send("intent", p.to_dict())
         return seq
 

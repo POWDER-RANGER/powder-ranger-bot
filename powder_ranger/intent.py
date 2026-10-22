@@ -104,9 +104,11 @@ class IntentPacket:
     delegation_id: str | None = None
     player_intent_ref: str | None = None
     note: str = ""
+    producer: str = ""                # one id per sending process; replay checks are per producer
 
     def to_dict(self) -> dict:
         return {
+            "producer": self.producer,
             "seq": self.seq,
             "source": self.source.value,
             "created_at": self.created_at,
@@ -132,6 +134,7 @@ class IntentPacket:
             delegation_id=d.get("delegation_id"),
             player_intent_ref=d.get("player_intent_ref"),
             note=d.get("note", ""),
+            producer=str(d.get("producer", "")),
         )
 
 

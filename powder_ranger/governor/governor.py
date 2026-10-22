@@ -10,6 +10,7 @@ Message types (body fields):
   grant     Delegation.to_dict()          player grants leeway
   revoke    {"id": str | None}            None = revoke all
   presence  {"how": "voice"|"gaze"|...}   player is here (online-mode check)
+  command   {"id", "verb", "target", ...}  a player instruction, logged for attribution
   halt      {"reason": str}
   resume    {}
   shutdown  {}
@@ -78,7 +79,7 @@ class Governor:
             d = self.policy.evaluate(p, now, focused)
             self.log.append("intent", allow=d.allow, reasons=d.reasons, source=p.source.value,
                             age_ms=round((now - p.created_at) * 1000.0, 1),
-                            seq=p.seq, delegation_id=p.delegation_id,
+                            seq=p.seq, producer=p.producer, delegation_id=p.delegation_id,
                             player_intent_ref=p.player_intent_ref, confidence=p.confidence,
                             frames=len(p.frames), note=p.note)
             if d.allow and d.packet is not None:
@@ -98,6 +99,11 @@ class Governor:
             self.log.append("revoke", id=body.get("id"))
         elif msg_type == "presence":
             self.policy.note_presence(now)
+        elif msg_type == "command":
+            # A player instruction (voice, gaze, switch). Logged so later output can cite it.
+            self.policy.note_presence(now)
+            self.log.append("player_command", **{k: body.get(k) for k in
+                                                 ("id", "verb", "target", "manner", "scope", "text", "via")})
         elif msg_type == "halt":
             self.kill.trip(body.get("reason", "halt message"))
         elif msg_type == "resume":

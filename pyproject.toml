@@ -20,6 +20,11 @@ windows = [
     "dxcam",      # screen capture
     "psutil",
 ]
+voice = [
+    "faster-whisper",
+    "sounddevice",
+    "pyttsx3",
+]
 dev = ["pytest"]
 
 [project.scripts]

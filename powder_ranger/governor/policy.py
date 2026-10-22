@@ -3,7 +3,7 @@
 Rule order (first deny wins):
   1. halted (kill switch)          -> deny everything
   2. stale (older than its TTL)    -> deny
-  3. replayed sequence number      -> deny
+  3. replayed sequence number      -> deny (tracked per producer process)
   4. player packets                -> allow (player always outranks the companion)
   5. player override window        -> deny non-player output while the player is acting
   6. attribution: active delegation required for non-player output
@@ -62,7 +62,7 @@ class GovernorPolicy:
         self.halted = False
         self.halt_reason = ""
         self.delegations: dict[str, Delegation] = {}
-        self.last_seq: dict[Source, int] = {}
+        self.last_seq: dict[tuple[Source, str], int] = {}
         self.last_player_input: float | None = None
         self.last_presence: float | None = None
         self._buckets: dict[Source, _TokenBucket] = {}
@@ -98,10 +98,11 @@ class GovernorPolicy:
         if age_ms > p.ttl_ms:
             return Decision(False, [f"stale: {age_ms:.0f} ms > ttl {p.ttl_ms} ms"])
 
-        last = self.last_seq.get(p.source)
+        key = (p.source, p.producer)
+        last = self.last_seq.get(key)
         if last is not None and p.seq <= last:
             return Decision(False, [f"replayed or out-of-order seq {p.seq} <= {last}"])
-        self.last_seq[p.source] = p.seq
+        self.last_seq[key] = p.seq
 
         if p.source is Source.PLAYER:
             self.last_player_input = now
