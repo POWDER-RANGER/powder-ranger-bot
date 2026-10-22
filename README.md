@@ -41,7 +41,8 @@ See [What has and has not been verified](#what-has-and-has-not-been-verified).
 | `output/adapters.py` | `VGamepadAdapter` (X360/DS4) and `DryRunAdapter` |
 | `capture/screen.py` | Window capture with dxcam |
 | `runners/nitrogen.py` | Client for NitroGen's server; converts its actions to `GamepadFrame`s |
-| `cli.py` | `launch`, `governor`, `reflex`, `padtest`, `netcheck`, `verify-log`, `stop` |
+| `inputs/player.py` | Player's own controls (physical XInput pad, keyboard or key-typing switches) sent as PLAYER packets; optional tremor smoothing |
+| `cli.py` | `launch`, `governor`, `reflex`, `player`, `padtest`, `netcheck`, `verify-log`, `stop` |
 
 ## Safety rules (enforced in `GovernorPolicy`, tested in `tests/`)
 
@@ -55,6 +56,19 @@ See [What has and has not been verified](#what-has-and-has-not-been-verified).
 8. Watchdog: no approved intent for 500 ms eases the pad to neutral.
 9. Shutdown and errors always leave the pad neutral; the log is sealed on close.
 10. No game memory access, no code injection: the game sees only a controller.
+
+## Player input
+
+`launch --player-input xinput` reads your physical pad and sends it to the
+Governor as player input, which always outranks the companion. The virtual
+pad is also an XInput device, so the physical pad's slot is chosen **before**
+the virtual pad exists; launch refuses if zero or several pads are connected
+(pass `--player-slot` to choose). Add `--steady` to smooth tremor from the
+sticks. If the player input process dies, launch halts the companion.
+
+`--player-input keyboard` reads `player_input.keymap` from the profile
+(see `config/profiles/example_player.yaml`). The game also receives those
+keys directly, so map switches to keys the game does not use.
 
 ## Modes: deployment and development
 
@@ -94,19 +108,25 @@ the Governor is in each intent record (`age_ms`).
 
 ## What has and has not been verified
 
+Verified on the MSI (2026-10-21): CUDA PyTorch (torch 2.11 + cu128) sees the
+RTX 4060; NitroGen's dependencies import; a virtual X360 pad created on the
+Insider build reads back correctly over XInput (+y = up, so `invert_y: false`;
+A and LT register; reset returns neutral); a virtual DS4 pad creates;
+SuperTuxKart 1.5 is installed as `supertuxkart.exe`.
+
 Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
-46 tests passing, including a headless end-to-end run (fake NitroGen and fake
+53 tests passing, including a headless end-to-end run (fake NitroGen and fake
 capture over real ZMQ sockets to a Governor with the dry-run adapter, then a
 halt and a sealed-log check), and a `governor` CLI run with `verify-log`
 reporting chain OK and seal OK.
 
 Not yet run: anything on Windows. Unverified until the MSI runs them:
-- vgamepad on the Insider build; the Y-axis sign (padtest settles it; `invert_y` fixes it)
+- DS4 axis direction (padtest settles it)
+- Reading a physical pad through XInput (no physical pad was connected)
 - Pause-key hotkey registration
 - dxcam capture of the game window
 - NitroGen server round trip, real inference latency, and play quality without pausing the game
 - The firewall lockdown (netcheck is the test)
-- The game's exact process name
 
 ## NitroGen and licensing
 

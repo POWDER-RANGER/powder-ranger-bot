@@ -108,6 +108,21 @@ def cmd_launch(a: argparse.Namespace) -> int:
         print(f"Refusing: delegation '{a.delegate}' is not allowed in online mode.")
         return 4
 
+    player_args: list[str] | None = None
+    if a.player_input == "xinput":
+        from .inputs.player import pick_player_slot, xinput_connected_slots
+        try:
+            slot = a.player_slot if a.player_slot is not None else pick_player_slot(xinput_connected_slots())
+        except RuntimeError as exc:
+            print(f"Refusing to launch: {exc}")
+            return 7
+        player_args = ["player", "--source", "xinput", "--slot", str(slot)]
+        print(f"Player controller: XInput slot {slot} (chosen before the virtual pad is created)")
+    elif a.player_input == "keyboard":
+        player_args = ["player", "--source", "keyboard"]
+    if player_args is not None and a.steady:
+        player_args.append("--steady")
+
     env = dict(os.environ, **{KEY_ENV: os.urandom(32).hex()})
     common = [*(["--config", a.config] if a.config else []), *(["--profile", a.profile] if a.profile else [])]
     gov = subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, "governor", "--process", a.process,
@@ -123,10 +138,16 @@ def cmd_launch(a: argparse.Namespace) -> int:
     control.grant(delegation)
     print(f"Delegation granted: {delegation.scope} ({delegation.id})")
 
+    player = (subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, *player_args], env=env)
+              if player_args is not None else None)
     reflex = subprocess.Popen([sys.executable, "-m", "powder_ranger", *common, "reflex", "--process", a.process,
                                "--delegation", delegation.id, "--port", str(a.port)], env=env)
     try:
         while gov.poll() is None and reflex.poll() is None:
+            if player is not None and player.poll() is not None:
+                print("Player input process exited: halting the companion (the player must be able to take over).")
+                control.halt("player input lost")
+                break
             time.sleep(0.25)
         if reflex.poll() is not None:
             print(f"Reflex runner exited (code {reflex.returncode}).")
@@ -134,8 +155,9 @@ def cmd_launch(a: argparse.Namespace) -> int:
         print("Stopping...")
     finally:
         control.revoke()
-        if reflex.poll() is None:
-            reflex.terminate()
+        for proc in (reflex, player):
+            if proc is not None and proc.poll() is None:
+                proc.terminate()
         control.shutdown()
         try:
             gov.wait(timeout=5)
@@ -188,6 +210,37 @@ def cmd_padtest(a: argparse.Namespace) -> int:
     finally:
         gov.close()
     print("Pad test finished. If UP showed as DOWN, set invert_y: true in config/default.yaml.")
+    return 0
+
+
+def cmd_player(a: argparse.Namespace) -> int:
+    """Player input -> Governor as PLAYER packets (always outrank the companion)."""
+    import yaml
+    from .governor.client import GovernorClient
+    from .inputs.player import KeyboardSource, PlayerInputLoop, XInputSource
+
+    s = load_settings(a.config, a.profile)
+    if a.source == "xinput":
+        if a.slot is None:
+            sys.exit("--slot is required (launch picks it before the virtual pad exists)")
+        src = XInputSource(a.slot)
+    else:
+        prof = yaml.safe_load(Path(a.profile).read_text()) if a.profile else {}
+        keymap = ((prof or {}).get("player_input") or {}).get("keymap")
+        if not keymap:
+            sys.exit("keyboard input needs player_input.keymap in the profile")
+        src = KeyboardSource(keymap)
+    client = GovernorClient(s.endpoint, _session_key(), Source.PLAYER)
+    loop = PlayerInputLoop(src, lambda f: client.send_frames([f], frame_dt_ms=1000 / 120, ttl_ms=150,
+                                                             note=f"player:{src.name}"),
+                           presence=client.presence, steady=a.steady)
+    print(f"Player input: {src.name}{' (steady)' if a.steady else ''}")
+    try:
+        loop.run(hz=120)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        client.close()
     return 0
 
 
@@ -254,12 +307,22 @@ def main(argv: list[str] | None = None) -> int:
     la.add_argument("--delegate", default="full_autopilot", help="scope the player grants")
     la.add_argument("--port", type=int, default=5555, help="NitroGen server port")
     la.add_argument("--require-offline", action="store_true", help="refuse to start if the network is reachable")
+    la.add_argument("--player-input", choices=["xinput", "keyboard", "none"], default="none",
+                    help="player's own controls; they always outrank the companion")
+    la.add_argument("--player-slot", type=int, help="XInput slot of the physical pad (default: auto)")
+    la.add_argument("--steady", action="store_true", help="smooth the player's sticks (tremor filter)")
     la.set_defaults(fn=cmd_launch)
 
     pt = sub.add_parser("padtest")
     pt.add_argument("--output", choices=["x360", "ds4", "dryrun"])
     pt.add_argument("--hold", type=float, default=1.5, help="seconds per step")
     pt.set_defaults(fn=cmd_padtest)
+
+    pl = sub.add_parser("player")
+    pl.add_argument("--source", choices=["xinput", "keyboard"], required=True)
+    pl.add_argument("--slot", type=int)
+    pl.add_argument("--steady", action="store_true")
+    pl.set_defaults(fn=cmd_player)
 
     sub.add_parser("netcheck").set_defaults(fn=cmd_netcheck)
 
