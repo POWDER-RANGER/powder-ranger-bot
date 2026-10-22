@@ -153,13 +153,9 @@ def cmd_launch(a: argparse.Namespace) -> int:
     if player_args is not None and a.steady:
         player_args.append("--steady")
 
-    if a.start_game:
-        if pack is None or not pack.launch_exe:
-            print("Refusing: --start-game needs a pack with launch.exe")
-            return 8
-        print(f"Starting {pack.title}; waiting {pack.ready_after_s:.0f} s for it to load...")
-        subprocess.Popen([pack.launch_exe, *pack.launch_args])
-        time.sleep(pack.ready_after_s)
+    if a.start_game and (pack is None or not pack.launch_exe):
+        print("Refusing: --start-game needs a pack with launch.exe")
+        return 8
 
     env = dict(os.environ, **{KEY_ENV: os.urandom(32).hex()})
     common = [*(["--config", a.config] if a.config else []), *(["--profile", a.profile] if a.profile else [])]
@@ -171,6 +167,12 @@ def cmd_launch(a: argparse.Namespace) -> int:
     if gov.poll() is not None:
         print("Governor failed to start.")
         return 5
+    if a.start_game:
+        # The virtual pad now exists. Games often detect controllers only at startup,
+        # so the game starts after the pad, not before.
+        print(f"Starting {pack.title}; waiting {pack.ready_after_s:.0f} s for it to load...")
+        subprocess.Popen([pack.launch_exe, *pack.launch_args])
+        time.sleep(pack.ready_after_s)
 
     control = GovernorClient(s.endpoint, bytes.fromhex(env[KEY_ENV]), Source.SYSTEM)
     delegation = Delegation(id=f"launch-{int(time.time())}", scope=a.delegate, granted_at=time.monotonic(),

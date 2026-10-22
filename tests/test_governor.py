@@ -239,3 +239,21 @@ def test_headless_pipeline_end_to_end(tmp_path):
     assert metrics[0].startswith("t_wall,step,capture_ms,inference_ms") and len(metrics) == 6
     for c in (control, reflex):
         c.close()
+
+
+def test_watchdog_does_not_cut_a_long_chunk_short(tmp_path):
+    """Regression: a 16-action chunk lasting ~1 s must play out even though no new
+    packet arrives within watchdog_ms (the policy is thinking about the next one)."""
+    c = FakeClock()
+    gov, adapter, _ = make_gov(tmp_path, c, watchdog_ms=500)
+    grant(gov, c)
+    frames = [GamepadFrame(lx=0.2 * (i % 5)).to_dict() for i in range(16)]
+    pkt = IntentPacket(seq=1, source=Source.REFLEX, created_at=c(), ttl_ms=250,
+                       frames=tuple(GamepadFrame.from_dict(f) for f in frames), frame_dt_ms=66.7,
+                       delegation_id="d1").to_dict()
+    gov.handle("intent", pkt)
+    out = ticks(gov, c, int(1.0 * 120))               # 1.0 s: chunk is 15 x 66.7 ms = 1.0 s long
+    assert not gov._watchdog_neutral
+    assert max(f.lx for f in out[-30:]) > 0.5          # still playing near the end
+    ticks(gov, c, int(0.7 * 120))                      # then the watchdog may act
+    assert gov._watchdog_neutral

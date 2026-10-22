@@ -91,11 +91,14 @@ class Governor:
                     self._claims[c] = (f.buttons if c == "buttons" else getattr(f, c), now)
             elif d.allow and d.packet is not None:
                 self.stats["allowed"] += 1
-                self._last_allowed = now
                 self._watchdog_neutral = False
                 if d.packet.source.value == "player":
                     self._claims.clear()                 # full takeover supersedes partial claims
-                self.motor.schedule(d.packet.frames, d.packet.frame_dt_ms, d.packet.source, now)
+                start = self.motor.schedule(d.packet.frames, d.packet.frame_dt_ms, d.packet.source, now)
+                # The watchdog counts from the END of the scheduled playback: a long action chunk
+                # must not be cut off just because the policy is still thinking about the next one.
+                playback_end = start + (len(d.packet.frames) - 1) * d.packet.frame_dt_ms / 1000.0
+                self._last_allowed = max(now, playback_end)
             else:
                 self.stats["denied"] += 1
         elif msg_type == "grant":

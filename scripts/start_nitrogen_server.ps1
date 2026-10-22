@@ -1,8 +1,9 @@
 <#
 Start NitroGen's inference server in its own venv.
 
-NitroGen asks interactively which game to condition on; press Enter for
-unconditional. It prints "Server running on port 5555" when ready.
+NitroGen asks interactively which game to condition on. This script answers
+with an empty line (unconditional), so it also works when started in the
+background. It prints "Server running on port 5555" when ready.
 
 Usage:
   powershell -ExecutionPolicy Bypass -File scripts\start_nitrogen_server.ps1
@@ -19,4 +20,4 @@ if (-not (Test-Path $Weights)) { throw "Weights not found at $Weights (hf downlo
 
 & $py -c "import torch; print('CUDA available:', torch.cuda.is_available())"
 Set-Location $NitroGenDir
-& $py scripts\serve.py $Weights --port $Port
+"" | & $py scripts\serve.py $Weights --port $Port

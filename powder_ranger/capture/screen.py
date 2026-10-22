@@ -12,11 +12,32 @@ import sys
 IS_WINDOWS = sys.platform == "win32"
 
 
+_DPI_SET = False
+
+
+def make_dpi_aware() -> None:
+    """Without this, Windows reports window rectangles in scaled (logical) pixels
+    on a 125%/150% display while dxcam captures physical pixels: the crop would
+    miss part of the game. Must run before the first rectangle query."""
+    global _DPI_SET
+    if _DPI_SET or not IS_WINDOWS:
+        return
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)      # per-monitor aware
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+    _DPI_SET = True
+
+
 def find_window_rect(process_name: str) -> tuple[int, int, int, int]:
-    """Client-area rectangle (left, top, right, bottom) of the largest visible
-    window owned by process_name."""
+    """Client-area rectangle (left, top, right, bottom), in physical pixels, of the
+    largest visible window owned by process_name."""
     if not IS_WINDOWS:
         raise RuntimeError("window capture is Windows-only")
+    make_dpi_aware()
     import ctypes.wintypes as wt
     import psutil
 
