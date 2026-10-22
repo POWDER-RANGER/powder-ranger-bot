@@ -108,11 +108,15 @@ the Governor is in each intent record (`age_ms`).
 
 ## What has and has not been verified
 
-Verified on the MSI (2026-10-21): CUDA PyTorch (torch 2.11 + cu128) sees the
-RTX 4060; NitroGen's dependencies import; a virtual X360 pad created on the
-Insider build reads back correctly over XInput (+y = up, so `invert_y: false`;
-A and LT register; reset returns neutral); a virtual DS4 pad creates;
-SuperTuxKart 1.5 is installed as `supertuxkart.exe`.
+Verified on the MSI (2026-10-21, Windows 11 Insider 26220, Python 3.11):
+- `pytest`: 53 passed (needs the repo-local temp dir, now in `pyproject.toml`)
+- `padtest --output x360`, read back over XInput: every axis reached +/-0.8 in
+  the right direction (+y = up, so `invert_y: false`), LT reached 255, all 10
+  buttons registered, the pad ended neutral; log chain OK, seal OK
+- Governor CLI: Pause hotkey registers; a synthesized Pause keypress tripped the
+  kill switch; the STOP file tripped it too
+- CUDA PyTorch (torch 2.11 + cu128) sees the RTX 4060; NitroGen's dependencies import
+- SuperTuxKart 1.5 installed as `supertuxkart.exe`; a virtual DS4 pad creates
 
 Verified in the development container (Linux, Python 3.13): `python -m pytest -q`,
 53 tests passing, including a headless end-to-end run (fake NitroGen and fake
@@ -121,9 +125,8 @@ halt and a sealed-log check), and a `governor` CLI run with `verify-log`
 reporting chain OK and seal OK.
 
 Not yet run: anything on Windows. Unverified until the MSI runs them:
-- DS4 axis direction (padtest settles it)
+- DS4 axis direction (XInput cannot read a DS4; check in joy.cpl)
 - Reading a physical pad through XInput (no physical pad was connected)
-- Pause-key hotkey registration
 - dxcam capture of the game window
 - NitroGen server round trip, real inference latency, and play quality without pausing the game
 - The firewall lockdown (netcheck is the test)
