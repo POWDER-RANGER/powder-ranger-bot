@@ -18,6 +18,7 @@ dependencies = [
 windows = [
     "vgamepad",   # virtual X360 / DS4 via ViGEmBus
     "dxcam",      # screen capture
+    "opencv-python",  # dxcam's frame processor imports cv2 at capture time
     "psutil",
 ]
 voice = [
