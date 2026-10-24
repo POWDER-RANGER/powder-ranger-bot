@@ -11,16 +11,19 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
 .venv\Scripts\python -m powder_ranger padtest --output x360
 
 # 3. NitroGen server (its own venv, weights at %USERPROFILE%\Aether\weights\ng.pt)
+#    Warns if the firewall rule is missing; add -RequireFirewall to refuse instead.
 powershell -ExecutionPolicy Bypass -File scripts\start_nitrogen_server.ps1
 
-# 4. Play-mode lockdown (Administrator), then confirm
+# 4. Smoke test: game running windowed in a single-player race
+powershell -ExecutionPolicy Bypass -File scripts\run_smoke_test.ps1 -Process supertuxkart.exe
+# or, with the pack starting the game itself:
+.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --player-input xinput
+
+# Optional, for real play sessions only (Administrator). Not needed during development.
+# It also blocks the base Python, which affects other projects on this machine.
 powershell -ExecutionPolicy Bypass -File scripts\lockdown_offline.ps1
 .venv\Scripts\python -m powder_ranger netcheck
-
-# 5. Smoke test: game running windowed in a single-player race
-powershell -ExecutionPolicy Bypass -File scripts\run_smoke_test.ps1 -Process supertuxkart.exe -RequireOffline
-# or, with the pack starting the game itself:
-.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --require-offline --player-input xinput
+# then add -RequireOffline to the smoke test, or --require-offline to launch
 ```
 
 Results land in `logs/` (kept local, git-ignored):
