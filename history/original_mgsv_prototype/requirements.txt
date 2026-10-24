@@ -4,13 +4,13 @@
 opencv-python==4.8.1.78
 numpy==1.24.3
 mss==9.0.1
-Pillow==10.0.0
+Pillow==13.0.0
 
 # AI/ML framework
-torch==2.0.1
-transformers==4.33.2
+torch==2.13.0
+transformers==5.10.1
 stable-baselines3==2.0.0
-sentence-transformers==2.2.2
+sentence-transformers==5.6.0
 
 # Accessibility interfaces
 speech-recognition==3.10.0
@@ -24,8 +24,8 @@ ollama==0.1.7        # Local LLM server
 openai-whisper==20231117  # Local speech recognition
 
 # Development and debugging
-pytest==7.4.2
-black==23.9.1
+pytest==9.0.3
+black==26.3.1
 flake8==6.1.0
 
 # System utilities
