@@ -11,6 +11,8 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
 .venv\Scripts\python -m powder_ranger padtest --output x360
 
 # 3. NitroGen server (its own venv, weights at %USERPROFILE%\Aether\weights\ng.pt)
+#    NitroGen's venv needs: pip install "transformers>=4.50,<5" "diffusers<0.36"
+#    If the SigLIP2 encoder download stalls, set $env:HF_HUB_DISABLE_XET="1" first.
 #    Warns if the firewall rule is missing; add -RequireFirewall to refuse instead.
 powershell -ExecutionPolicy Bypass -File scripts\start_nitrogen_server.ps1
 
