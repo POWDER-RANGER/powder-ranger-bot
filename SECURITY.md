@@ -17,7 +17,7 @@ policy) makes the controller do what the player did not authorize.
 | Play mode network | `scripts/lockdown_offline.ps1` blocks egress; `netcheck` verifies from the launcher's Python |
 
 ## Known limits
-- The NitroGen server (upstream code) binds all interfaces and unpickles requests. `start_nitrogen_server.ps1` refuses to start without its firewall rule. Run it only on the machine that plays.
+- The NitroGen server (upstream code) binds all interfaces and unpickles requests. `start_nitrogen_server.ps1` warns when its firewall rule is missing and refuses only with `-RequireFirewall`. During development, run it on a trusted network and only on the machine that plays.
 - The session key is passed in an environment variable, readable by processes of the same user.
 - Spoken grants have no confirmation step yet.
 - ViGEmBus is retired upstream; existing installs work but receive no fixes.

@@ -1,4 +1,4 @@
-# Field manual
+# Æther field manual
 
 How the player's channels, calibration, Game Packs and modes work. Setup is in [SETUP-WINDOWS.md](SETUP-WINDOWS.md); the system design is in [ARCHITECTURE.md](../ARCHITECTURE.md).
 
