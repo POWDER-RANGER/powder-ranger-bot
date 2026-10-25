@@ -8,7 +8,7 @@
 <img alt="Stage 1" src="https://img.shields.io/badge/stage-1%20smoke%20test-8a8b86?labelColor=0b0c0d">
 </p>
 
-A local, accessibility-first game companion. **The player directs; the companion plays** through a virtual controller, from the screen alone. Part of Powder Ranger.
+A local, accessibility-first game companion. **The player directs; the companion plays** through a virtual controller, from the screen alone. The companion is **PR-REX**.
 
 > **The player is the legend. The companion is the body double.**
 > Every controller output traces to a player intent or to a delegation the player granted, and the player takes control back at any instant.
