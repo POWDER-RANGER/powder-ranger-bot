@@ -8,17 +8,17 @@ Version 1, 2026-10-25. Values are read from the files named in each section. Lin
 | --- | --- | --- |
 | **Æther** | The platform and product | Display text always uses the ligature Æ: `ÆTHER` in caps, `Æther` in sentences. Plain `Aether` only in code paths and identifiers, e.g. `%USERPROFILE%\Aether`. |
 | **PR-REX** | The companion: the body double the player directs | Name the companion PR-REX where it is the actor ("PR-REX proposes; the Governor decides"). Use "companion" in generic copy. |
-| **POWDER-RANGER** | GitHub organization and the umbrella name of the first concept | Used in URLs and attribution only. Not a product name. |
+| **POWDER-RANGER** | GitHub organization | URLs and attribution only. Not a product name. |
 | `powder_ranger`, `powder-ranger` | Python package and CLI | Unchanged. Renaming the code is a separate task. |
 
 Taglines, in order of use:
 
-- Site hero lead: **A local, accessibility-first game companion. The player directs. The companion plays.**
-- Site quote, banner line, and og:description: **The player is the legend. The companion is the body double.**
-- README and social preview: **The player directs. The companion plays.**
+- Site hero lead: **A local, accessibility-first game companion. The player directs. PR-REX plays.**
+- Site quote, banner line, and og:description: **The player is the legend. PR-REX is the body double.**
+- README lead and social preview: **The player directs; PR-REX plays.**
 - Banner strapline (mono, uppercase): **LOCAL ONLY · HUMAN LIMITS · SIGNED · SEALED · PLAYER ALWAYS WINS**. The social preview uses the same line without the last clause.
 
-**[gap]** The site footer still reads "Æther is part of Powder Ranger". It is kept as umbrella attribution. Decide whether Powder Ranger remains an umbrella or is retired.
+**Resolved 2026-10-25.** Powder Ranger is retired as a product name. The footer names only Æther and the POWDER-RANGER organization.
 
 ## 2. Color
 
@@ -134,7 +134,7 @@ The wordmark `ÆTHER` is outlined Big Shoulders glyphs, not live text. Keep it o
 
 - Plain and literal. No hype, no superlatives.
 - State only what `docs/VERIFICATION.md` records as run. The site already says so: "Nothing here is claimed before it has run."
-- Name the player as the legend and the companion as the body double. Never describe the companion as the one in control.
+- Name the player as the legend and PR-REX as the body double. Never describe PR-REX as the one in control.
 - Use "companion" or PR-REX, not "bot", in product copy. The repo name is the only exception.
 - Scope identifiers (`full_autopilot`, `driving`) are code. Do not use them as marketing words.
 
@@ -155,12 +155,14 @@ The wordmark `ÆTHER` is outlined Big Shoulders glyphs, not live text. Keep it o
 
 - `ÆTHER // FIELD COMPANION` replaces `POWDER RANGER // FIELD COMPANION` in `banner.svg`, `social-preview.svg`, and `social-preview.png`.
 - The site kicker is `ÆTHER // Field companion`.
-- README names the companion: "The companion is **PR-REX**."
+- README names the companion in its lead line.
 - The companion box in `aether-with-the-legend.svg` is labeled PR-REX. The title stays ÆTHER.
+- Taglines name PR-REX as the actor: "PR-REX plays" and "PR-REX is the body double".
+- Footer reads "Æther, by Curtis Charles Farrar (POWDER-RANGER)".
+- Repo description set to the Æther tagline. File tree filed at `docs/TREE.md`.
 
 ## 10. Open decisions
 
 1. One dark base for site and artwork (`#150809` or `#0c0405`).
-2. Whether Powder Ranger survives as the umbrella in the footer.
-3. Move the wordmark generator into the repo.
-4. Three diagrams (`aether-operating-path.svg`, `aether-with-the-legend.svg`, `aether-learning.svg`) are not linked anywhere. Link them from the site and README, or retire them.
+2. Move the wordmark generator into the repo.
+3. Three diagrams (`aether-operating-path.svg`, `aether-with-the-legend.svg`, `aether-learning.svg`) are not linked anywhere. Link them from the site and README, or retire them.

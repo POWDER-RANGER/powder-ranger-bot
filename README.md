@@ -8,9 +8,9 @@
 <img alt="Stage 1" src="https://img.shields.io/badge/stage-1%20smoke%20test-8a8b86?labelColor=0b0c0d">
 </p>
 
-A local, accessibility-first game companion. **The player directs; the companion plays** through a virtual controller, from the screen alone. The companion is **PR-REX**.
+A local, accessibility-first game companion. **The player directs; PR-REX plays** through a virtual controller, from the screen alone.
 
-> **The player is the legend. The companion is the body double.**
+> **The player is the legend. PR-REX is the body double.**
 > Every controller output traces to a player intent or to a delegation the player granted, and the player takes control back at any instant.
 
 ## Operating picture
@@ -36,14 +36,15 @@ Enforced in `GovernorPolicy`, the Governor and the motor model; the tests in `te
 
 ## Status
 
-Stage 1 (pipeline smoke test) is **code complete and unit-tested**. The first end-to-end run on hardware has not happened yet.
+Stage 1 (pipeline smoke test) is **code complete and unit-tested**, and has run end to end once on the reference machine (2026-10-24). The loop works. PR-REX does not play the game well yet.
 
 | Area | State |
 | --- | --- |
 | Governor, policy, kill switch, sealed log | Built; 132 tests pass on Linux and Windows CI |
 | Virtual pad, kill switch on Windows | Verified on the reference machine |
-| Player input, voice, gaze, calibration, Game Packs, reports | Built, unit-tested; not yet run on hardware |
-| Window capture, NitroGen round trip, network lockdown | **Not verified** |
+| Player input, voice, gaze, calibration, Game Packs, reports | Built, unit-tested. Keyboard input ran live on 2026-10-24. Physical pad, voice, gaze and calibration have not run on hardware. |
+| Window capture, NitroGen round trip, live session | Verified on the reference machine, 2026-10-24 |
+| Play quality, DS4 axis direction, firewall lockdown | **Not verified.** Play quality is poor. The lockdown is optional during development. |
 
 The full record, including what is unverified, is in [docs/VERIFICATION.md](docs/VERIFICATION.md). The October 2026 code review and its fixes are in [docs/REVIEW-2026-10.md](docs/REVIEW-2026-10.md).
 
@@ -69,6 +70,8 @@ Full walkthrough: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md). Linux or macOS
 | [Verification record](docs/VERIFICATION.md) | What has run, where, and what has not |
 | [Code review, Oct 2026](docs/REVIEW-2026-10.md) | Findings F1-F13 and their status |
 | [History](history/README.md) | The first prototype, kept unchanged, and what was retired |
+| [Brand](docs/BRAND.md) | Names, colors, type, logo and voice rules |
+| [File tree](docs/TREE.md) | Every tracked file and what it is for |
 
 ## Module map
 

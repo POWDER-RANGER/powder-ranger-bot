@@ -1,8 +1,8 @@
-<#
-Powder Ranger - play-mode network lockdown. Run as Administrator.
+﻿<#
+Æther - play-mode network lockdown. Run as Administrator.
 
   - Sets HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE for this user.
-  - Blocks outbound traffic for the Powder Ranger and NitroGen Python interpreters.
+  - Blocks outbound traffic for the Æther and NitroGen Python interpreters.
   - Blocks inbound TCP 5555 (NitroGen's server listens on ALL interfaces and
     accepts pickle, which can run code) and 5577 (Governor; it already binds
     localhost only - this is defense in depth).

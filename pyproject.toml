@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "powder-ranger"
 version = "0.1.0"
-description = "Local, accessibility-first game companion: the player directs, the companion plays on their behalf."
+description = "Æther: local, accessibility-first game companion. The player directs; PR-REX plays on their behalf."
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",

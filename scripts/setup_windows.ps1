@@ -1,7 +1,7 @@
-<#
-Powder Ranger - Windows setup (runtime only).
+﻿<#
+Æther - Windows setup (runtime only).
 
-Creates .venv in the repo, installs Powder Ranger with Windows extras, and runs
+Creates .venv in the repo, installs Æther with Windows extras, and runs
 the test suite. NitroGen keeps its own venv (it needs torch); the two talk over
 a local socket only, which also keeps NitroGen's noncommercial license separate.
 

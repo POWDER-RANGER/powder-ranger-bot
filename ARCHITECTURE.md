@@ -1,5 +1,7 @@
 # Architecture
 
+**PR-REX is the companion.** In Stage 1 it is the reflex runner: capture plus NitroGen. It proposes only. Every output passes the Governor, and it never touches the controller directly.
+
 ## Processes
 | Process | Owns | Never does |
 | --- | --- | --- |
