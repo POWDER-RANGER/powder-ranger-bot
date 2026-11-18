@@ -52,8 +52,8 @@ The full record, including what is unverified, is in [docs/VERIFICATION.md](docs
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1                 # venv, install, tests
 .venv\Scripts\python -m powder_ranger padtest --output x360                         # check the virtual pad
-powershell -ExecutionPolicy Bypass -File scripts\lockdown_offline.ps1                # play-mode lockdown (admin)
-.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --require-offline --player-input xinput
+powershell -ExecutionPolicy Bypass -File scripts\start_nitrogen_server.ps1          # reflex model server
+.venv\Scripts\python -m powder_ranger launch --pack supertuxkart --start-game --player-input xinput
 ```
 
 Full walkthrough: [docs/SETUP-WINDOWS.md](docs/SETUP-WINDOWS.md). Linux or macOS can run the tests and the dry-run adapter: `pip install -e ".[dev]" && pytest`.
