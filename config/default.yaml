@@ -1,4 +1,4 @@
-# Powder Ranger - default settings. A player profile (config/profiles/*.yaml)
+# Æther (PR-REX) - default settings. A player profile (config/profiles/*.yaml)
 # overrides any of these.
 
 mode: deployment             # deployment | development (see config/profiles/development.yaml)

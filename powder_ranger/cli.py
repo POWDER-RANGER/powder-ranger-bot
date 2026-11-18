@@ -478,7 +478,7 @@ def cmd_stop(a: argparse.Namespace) -> int:
 
 # ---------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="powder_ranger")
+    ap = argparse.ArgumentParser(prog="powder_ranger", description="Æther: a local, accessibility-first game companion. The companion is PR-REX.")
     ap.add_argument("--config", help="settings YAML (default: config/default.yaml)")
     ap.add_argument("--profile", help="player profile YAML")
     sub = ap.add_subparsers(dest="cmd", required=True)

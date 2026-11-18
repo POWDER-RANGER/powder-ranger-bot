@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Æther | A local, accessibility-first game companion</title>
-<meta name="description" content="The player directs; the companion plays through a virtual controller, from the screen alone. Local only, human limits, signed and sealed.">
+<meta name="description" content="The player directs; PR-REX plays through a virtual controller, from the screen alone. Local only, human limits, signed and sealed.">
 <meta name="theme-color" content="#0e0607">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Æther | A local, accessibility-first game companion">
-<meta property="og:description" content="The player is the legend. The companion is the body double.">
+<meta property="og:description" content="The player is the legend. PR-REX is the body double.">
 <meta property="og:image" content="https://powder-ranger.github.io/powder-ranger-bot/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230e0607'/%3E%3Cg fill='none' stroke='%23f2c230' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='20'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3Cpath d='M32 6v12M32 46v12M6 32h12M46 32h12'/%3E%3C/g%3E%3C/svg%3E">
@@ -111,6 +111,7 @@ td:first-child{font-weight:600;width:38%}
 .pill{display:inline-block;font:700 10.5px/1 var(--mono);letter-spacing:.16em;padding:6px 8px;border:1px solid currentColor;white-space:nowrap}
 .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
 .scroll{overflow-x:auto}
+@media (max-width:640px){.scroll thead{display:none}.scroll table,.scroll tbody,.scroll tr,.scroll td{display:block}.scroll tr{padding:14px 16px;border-bottom:1px solid var(--seam);box-shadow:0 1px 0 var(--hi)}.scroll td{padding:3px 0;border:0;box-shadow:none}.scroll td:first-child{font-weight:700}.scroll td:last-child{color:var(--mut)}}
 .stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0}
 .stage{padding:22px;border-right:2px solid var(--seam);box-shadow:1px 0 0 var(--hi);position:relative}
 .stage:last-child{border-right:0}
@@ -159,11 +160,11 @@ footer p{max-width:72ch;margin:0 0 10px}
     </svg>
   </div>
   <div class="wrap">
-    <div class="kick"><b></b>Powder Ranger // Field companion</div>
+    <div class="kick"><b></b>ÆTHER // Field companion</div>
     <h1>ÆTHER</h1>
     <div class="rule"></div>
-    <p class="lead">A local, accessibility-first game companion. The player directs. The companion plays.</p>
-    <span class="chip">Stage 1 · smoke test pending</span>
+    <p class="lead">A local, accessibility-first game companion. The player directs. PR-REX plays.</p>
+    <span class="chip">Stage 1 · loop verified · play not yet</span>
     <div class="cta">
       <a class="btn primary" href="https://github.com/POWDER-RANGER/powder-ranger-bot">View the repository</a>
       <a class="btn" href="#briefing">Read the briefing</a>
@@ -176,7 +177,7 @@ footer p{max-width:72ch;margin:0 0 10px}
   <div class="wrap">
     <div class="kick"><b></b>01 · Briefing</div>
     <h2>One principle</h2>
-    <p class="quote">The player is the <em>legend</em>. The companion is the <em>body double</em>.</p>
+    <p class="quote">The player is the <em>legend</em>. PR-REX is the <em>body double</em>.</p>
     <div class="cols">
       <div class="card"><h3>The player directs</h3><p>Every controller output traces to a player intent or to a delegation the player granted. No grant, no output.</p></div>
       <div class="card"><h3>Control returns at once</h3><p>Player input outranks the companion on every tick. There is no mode to escape from and no menu to find.</p></div>
@@ -225,12 +226,13 @@ footer p{max-width:72ch;margin:0 0 10px}
       <thead><tr><th>Area</th><th>State</th><th>Evidence</th></tr></thead>
       <tbody>
         <tr><td>Governor, policy, sealed log</td><td><span class="pill ok">BUILT · TESTED</span></td><td>132 tests, Linux and Windows CI</td></tr>
-        <tr><td>Virtual pad and kill switch</td><td><span class="pill ok">VERIFIED</span></td><td>Reference machine, 2026-10-21</td></tr>
+        <tr><td>Virtual pad and kill switch</td><td><span class="pill ok">VERIFIED</span></td><td>Reference machine, 2026-10-21; STOP file halted a live session 2026-10-24</td></tr>
         <tr><td>Motor model scheduling</td><td><span class="pill ok">FIXED</span></td><td>October review F1/F2 with regressions</td></tr>
-        <tr><td>Voice, gaze, player input, calibration</td><td><span class="pill warn">BUILT</span></td><td>Unit-tested, not yet run on hardware</td></tr>
-        <tr><td>Window capture</td><td><span class="pill bad">UNVERIFIED</span></td><td>Test unfinished</td></tr>
-        <tr><td>NitroGen round trip and latency</td><td><span class="pill bad">UNVERIFIED</span></td><td>Weights download unfinished</td></tr>
-        <tr><td>Network lockdown</td><td><span class="pill bad">UNVERIFIED</span></td><td><code class="mono">netcheck</code> is the test</td></tr>
+        <tr><td>Voice, gaze, player input, calibration</td><td><span class="pill warn">BUILT</span></td><td>Keyboard input ran live; physical pad, voice, gaze and calibration not yet run on hardware</td></tr>
+        <tr><td>Window capture</td><td><span class="pill ok">VERIFIED</span></td><td>Live session 2026-10-24, median 3.3 ms per frame</td></tr>
+        <tr><td>NitroGen round trip and latency</td><td><span class="pill ok">VERIFIED</span></td><td>About 225 ms per chunk on a test frame; median 450 ms live with the game running</td></tr>
+        <tr><td>Play quality</td><td><span class="pill bad">UNVERIFIED</span></td><td>First run: little progress in 40 s, then left the race. NitroGen ran unconditioned</td></tr>
+        <tr><td>Network lockdown</td><td><span class="pill warn">OPTIONAL</span></td><td>Not required during development; <code class="mono">netcheck</code> is the test</td></tr>
       </tbody>
     </table>
     </div>
@@ -270,7 +272,7 @@ footer p{max-width:72ch;margin:0 0 10px}
 
 <footer>
   <div class="wrap">
-    <p>Æther is part of Powder Ranger, by Curtis Charles Farrar (<a href="https://github.com/POWDER-RANGER">POWDER-RANGER</a>). MIT licensed.</p>
+    <p>Æther, by Curtis Charles Farrar (<a href="https://github.com/POWDER-RANGER">POWDER-RANGER</a>). MIT licensed.</p>
     <p>NitroGen, the optional reflex model, runs in its own process under NVIDIA's separate noncommercial license. This repository imports nothing from it.</p>
   </div>
 </footer>
